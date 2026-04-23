@@ -5,6 +5,7 @@
 #include <malloc.h>
 #include "bgraph.h"
 #include "memman.h"
+#include "unaligned.h"
 
 word *screen;
 word curcolor,charcolors[7] = {RGB555_ALPHA(0,0,0),RGB555(12,31,12),RGB555(12,30,12),RGB555(12,28,12),RGB555(12,20,12),0x0000,0x0000};
@@ -506,8 +507,8 @@ void show_ms_cursor(integer x,integer y)
   if (x>mx) mx=639;
   if (y<0) y=0;
   if (y>my) my=479;
-  xs=*(integer *)mscursor;
-  ys=*((integer *)mscursor+1);
+  xs=read_i16_unaligned(mscursor);
+  ys=read_i16_unaligned((const integer *)mscursor+1);
   get_picture(x,y,xs,ys,mssavebuffer);
   put_picture(x,y,mscursor);
   mscuroldx=x;
@@ -523,8 +524,8 @@ void hide_ms_cursor()
 void redraw_ms_cursor_on_screen(void) {
 #ifdef FORCE_SOFTWARE_CURSOR
     if (mssavebuffer) {
-      integer xs=*(integer *)mssavebuffer;
-      integer ys=*((integer *)mssavebuffer+1);
+      integer xs=read_i16_unaligned(mssavebuffer);
+      integer ys=read_i16_unaligned((const integer *)mssavebuffer+1);
       showview(mscuroldx,mscuroldy,xs,ys);
     }
 #endif
@@ -536,8 +537,8 @@ void *register_ms_cursor(const void *cursor)
   integer xs,ys;
 
   mscursor=cursor;
-  xs=*(integer *)mscursor;
-  ys=*((integer *)mscursor+1);
+  xs=read_i16_unaligned(mscursor);
+  ys=read_i16_unaligned((const integer *)mscursor+1);
   if (mssavebuffer!=NULL) free(mssavebuffer);
   mssavebuffer=malloc(xs*ys*2+10);//5 bajtu pro strejcka prihodu
   return mssavebuffer;
@@ -550,8 +551,8 @@ void move_ms_cursor(integer newx,integer newy,char nodraw)
   int my =  DxGetResY() - 1;
   static integer msshowx=0,msshowy=0;
 
-  xs=*(integer *)mscursor;
-  ys=*((integer *)mscursor+1);
+  xs=read_i16_unaligned(mscursor);
+  ys=read_i16_unaligned((const integer *)mscursor+1);
   if (nodraw)
      {
      showview(msshowx,msshowy,xs,ys);

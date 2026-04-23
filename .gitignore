@@ -6,6 +6,8 @@ _UpgradeReport_Files
 /Bin
 /Debug
 /build
+/build-*/
+CMakeUserPresets.json
 /.cproject
 /.project
 /.settings

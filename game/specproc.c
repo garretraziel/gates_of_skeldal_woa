@@ -98,21 +98,14 @@ static void otoc_obraz1(word *source,word *target)
 
 void swap_screen(word *_p,word *_q)
   {
-  __asm
+  int i;
+  for (i = 0; i < 115200; i++)
     {
-    mov esi,_p
-    mov edi,_q
-
-    std
-    mov  ecx,115200
-    lp1:
-    mov  ax,[edi]
-    xchg ax,[esi]
-    stosw
-    add  esi,2
-    dec  ecx
-    jnz  lp1
-    cld
+    word tmp = *_q;
+    *_q = *_p;
+    *_p = tmp;
+    _p++;
+    _q--;
     }
   }
 //  #pragma aux swap_screen parm [esi][edi]=\ modify [ecx eax]

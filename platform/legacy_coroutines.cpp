@@ -3,6 +3,7 @@
 
 #include <thread>
 #include <atomic>
+#include <chrono>
 #include <memory>
 #include <queue>
 #include <unordered_map>

@@ -12,15 +12,63 @@ WORK IN PROGRESS!!!
 
 ## BUILD
 
-Required SDL 2.0
-Base development platform is Ubuntu 24
+### Dependencies
+
+- **SDL 2.0** — required for graphics, input, and sound
+- **CMake 3.16+** — build system
+- **C++20 compiler** — MSVC 19.29+, GCC 10+, or Clang 12+
+
+### Installing SDL2 with vcpkg (Recommended for Windows)
+
+The project includes a `vcpkg.json` manifest. If you have vcpkg available (bundled with Visual Studio 2022+), SDL2 is installed automatically during CMake configure when you pass the vcpkg toolchain file:
 
 ```
-mkdir build
-cd build
+cmake -DCMAKE_TOOLCHAIN_FILE=<path-to-vcpkg>/scripts/buildsystems/vcpkg.cmake ...
+```
+
+For Visual Studio's bundled vcpkg, the toolchain file is typically at:
+```
+C:\Program Files\Microsoft Visual Studio\<version>\<edition>\VC\vcpkg\scripts\buildsystems\vcpkg.cmake
+```
+
+### Linux (Ubuntu/Debian)
+
+```bash
+sudo apt install libsdl2-dev cmake build-essential
+mkdir build && cd build
 cmake ..
 make all
 ```
+
+### Windows (x64)
+
+```bat
+mkdir build && cd build
+cmake -G "Visual Studio 18 2026" -A x64 ^
+    -DCMAKE_TOOLCHAIN_FILE="<path-to-vcpkg>/scripts/buildsystems/vcpkg.cmake" ^
+    -DVCPKG_TARGET_TRIPLET=x64-windows ..
+cmake --build . --config Release
+```
+
+### Windows on ARM (ARM64)
+
+```bat
+mkdir build-arm64 && cd build-arm64
+cmake -G "Visual Studio 18 2026" -A ARM64 ^
+    -DCMAKE_TOOLCHAIN_FILE="<path-to-vcpkg>/scripts/buildsystems/vcpkg.cmake" ^
+    -DVCPKG_TARGET_TRIPLET=arm64-windows ..
+cmake --build . --config Release
+```
+
+> **Note:** Steamworks SDK is not available for ARM64 and is automatically disabled on this platform. The game compiles and runs without Steam achievements support.
+
+### Steamworks SDK (Optional)
+
+To enable Steam integration, set `STEAMWORKS_SDK_DIR` to the SDK path:
+```
+cmake -DSTEAMWORKS_SDK_DIR=/path/to/steamworks_sdk ...
+```
+Alternatively, place the SDK at `external/steamworks/` and it will be detected automatically. If not found, the game builds without Steam support.
 
 
 

@@ -43,7 +43,7 @@ if(WIN32)
         else()
             # 32-bit
             set(STEAMLIB ${STEAMWORKS_SDK_DIR}/redistributable_bin/win32/steam_api.lib)
-            set(STEAMDLL ${STEAMWORKS_SDK_DIR}/redistributable_bin/win64/steam_api.dll)
+            set(STEAMDLL ${STEAMWORKS_SDK_DIR}/redistributable_bin/win32/steam_api.dll)
         endif()
     else()
         set(STEAMLIB "")

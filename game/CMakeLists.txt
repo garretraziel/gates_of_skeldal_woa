@@ -1,9 +1,10 @@
+# Generate base64-encoded resources using CMake built-in (no host tool needed)
 add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/default_font.base64
-                   COMMAND file_to_base64 ${CMAKE_CURRENT_LIST_DIR}/boldcz.fon  > ${CMAKE_BINARY_DIR}/default_font.base64
-                   DEPENDS ${CMAKE_CURRENT_LIST_DIR}/boldcz.fon)
+                   COMMAND ${CMAKE_COMMAND} -DIN_FILE=${CMAKE_CURRENT_LIST_DIR}/boldcz.fon -DOUT_FILE=${CMAKE_BINARY_DIR}/default_font.base64 -P ${CMAKE_CURRENT_LIST_DIR}/file_to_base64.cmake
+                   DEPENDS ${CMAKE_CURRENT_LIST_DIR}/boldcz.fon ${CMAKE_CURRENT_LIST_DIR}/file_to_base64.cmake)
 add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/icon.base64
-                   COMMAND file_to_base64 ${CMAKE_CURRENT_LIST_DIR}/icon.bmp  > ${CMAKE_BINARY_DIR}/icon.base64
-                   DEPENDS ${CMAKE_CURRENT_LIST_DIR}/icon.bmp)
+                   COMMAND ${CMAKE_COMMAND} -DIN_FILE=${CMAKE_CURRENT_LIST_DIR}/icon.bmp -DOUT_FILE=${CMAKE_BINARY_DIR}/icon.base64 -P ${CMAKE_CURRENT_LIST_DIR}/file_to_base64.cmake
+                   DEPENDS ${CMAKE_CURRENT_LIST_DIR}/icon.bmp ${CMAKE_CURRENT_LIST_DIR}/file_to_base64.cmake)
 
 
 add_custom_command(

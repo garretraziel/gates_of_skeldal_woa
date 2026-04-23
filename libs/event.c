@@ -368,10 +368,13 @@ void tree_basics(T_EVENT_ROOT **ev_tree,EVENT_MSG *msg)
 
 int send_message_to(int (*cb)(EVENT_MSG *, void *), void *ctx, int message, ...) {
     EVENT_MSG x;
+    va_list ap;
     x.msg = message;
-    va_start(x.data, message);
+    va_start(ap, message);
+    va_copy(x.data, ap);
     int r = cb(&x, ctx);
     va_end(x.data);
+    va_end(ap);
     return r;
 }
 
@@ -387,10 +390,13 @@ static void send_message_to_tree(EVENT_MSG *x) {
 void send_message(int message,...)
   {
     EVENT_MSG x;
+    va_list ap;
     x.msg = message;
-    va_start(x.data, message);
+    va_start(ap, message);
+    va_copy(x.data, ap);
     send_message_to_tree(&x);
     va_end(x.data);
+    va_end(ap);
   }
 
 

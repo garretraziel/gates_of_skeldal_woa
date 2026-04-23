@@ -243,11 +243,13 @@ kba_skip:dec     ebx
 }
 */
 
+#ifdef _M_IX86
 #define zobraz_1 \
 	__asm lodsb \
 	__asm movzx   eax,al  \
 	__asm movzx   eax,short ptr [eax*2+ebx]  \
-	__asm stosw \
+	__asm stosw
+#endif
 
 
 

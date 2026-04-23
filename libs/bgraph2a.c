@@ -1,6 +1,7 @@
 #include <platform/platform.h>
 #include "types.h"
 #include "bgraph.h"
+#include "unaligned.h"
 
 #include <string.h>
 
@@ -41,7 +42,7 @@ void hor_line32(int x1,int y1,int x2)
   if (x2>mx) x2=mx;
   int32_t scr_linelen2 = GetScreenPitch();
   begline=GetScreenAdr()+scr_linelen2*y1;
-  for (i=x1;i<x2;i+=2) *(uint32_t *)(begline+i)=curcolor2;
+  for (i=x1;i<x2;i+=2) write_u32_unaligned(begline+i, curcolor2);
   if (i==x2) begline[i]=curcolor;
   }
 
@@ -76,7 +77,7 @@ void hor_line_xor(int x1,int y1,int x2)
   if (x2>mx) x2=mx;
   int32_t scr_linelen2 = GetScreenPitch();
   begline=GetScreenAdr()+scr_linelen2*y1;
-  for (i=x1;i<x2;i+=2) *(uint32_t *)(begline+i)^=curcolor2;
+  for (i=x1;i<x2;i+=2) { uint32_t tmp = read_u32_unaligned(begline+i); tmp ^= curcolor2; write_u32_unaligned(begline+i, tmp); }
   if (i==x2) begline[i]^=curcolor;
   }
 
