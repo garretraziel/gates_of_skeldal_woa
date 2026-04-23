@@ -12,6 +12,7 @@
 #include "math.h"
 #include "globals.h"
 #include "engine1.h"
+#include <libs/unaligned.h>
 
 #include <string.h>
 #define CTVR 128
@@ -105,6 +106,9 @@ void lodka64b(void *source,void *target,void *background,void *xlat,int32_t xysi
 //void (*turn)(int32_t lbuf,void *src1,void *src2,int size1);
 //word *GetBuffer2nd();
 //word *background;
+#ifdef _M_ARM64
+__declspec(align(4))
+#endif
 char nofloors=0,show_names=0,show_lives=0;
 
 
@@ -595,7 +599,7 @@ void show_cel(int celx,int cely,const void *stena,int xofs,int yofs,char rev, in
   if (!x3d->used) return;
   yd=&showtabs.y_table[cely];
   yp=&showtabs.y_table[cely+1];
-  txtsx=*(word *)stena;
+  txtsx=read_u16_unaligned(stena);
   txtsy=*((word *)stena+1);
     if (rev<2)
      {
@@ -676,7 +680,7 @@ void show_cel2(int celx,int cely,const void *stena,int xofs,int yofs,char rev, i
   if (celx<=0) x3d=&showtabs.x_table[-celx][cely]; else  x3d=&showtabs.x_table[celx][cely];
   if (!x3d->used) return;
   yd=&showtabs.y_table[cely+1];
-  txtsx=*(word *)stena;
+  txtsx=read_u16_unaligned(stena);
   txtsy=*((word *)stena+1);
   if (!rev)
      {
@@ -1387,7 +1391,7 @@ void draw_item2(int celx,int cely,int xpos,int ypos,  const void *txtr,int index
   ys=showtabs.y_table[cely+1].vert_size;
   xpos+=indextab[7-index][0];
   ypos+=indextab[7-index][1];
-  xpos-=*(word *)txtr/2;
+  xpos-=read_u16_unaligned(txtr)/2;
   xpos=xs*xpos/500;
   ypos=ys*ypos/320;
   if (asc) x=-x;

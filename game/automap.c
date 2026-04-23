@@ -15,6 +15,7 @@
 #include <libs/strlite.h>
 #include "engine1.h"
 #include <libs/pcx.h>
+#include <libs/unaligned.h>
 #include "globals.h"
 
 #include <ctype.h>
@@ -309,9 +310,9 @@ int hledej_poznamku(int x,int y,int depth)
         int xa,ya,xb,yb,dep;
         int xas,yas,xbs,ybs,xs,ys;
 
-        xa=*(int *)(texty_v_mape[i]);
-        ya=*(int *)(texty_v_mape[i]+4);
-        dep=*(int *)(texty_v_mape[i]+8);
+        xa=read_i32_unaligned(texty_v_mape[i]);
+        ya=read_i32_unaligned(texty_v_mape[i]+4);
+        dep=read_i32_unaligned(texty_v_mape[i]+8);
         xs=text_width(texty_v_mape[i]+12);
         ys=text_height(texty_v_mape[i]+12);
         xb=xa+xs;
@@ -345,8 +346,8 @@ char psani_poznamek(int id,int xa,int ya,int xr,int yr)
      {
      char *s;
 
-     xa=*(int *)(texty_v_mape[id]);
-     ya=*(int *)(texty_v_mape[id]+4);
+     xa=read_i32_unaligned(texty_v_mape[id]);
+     ya=read_i32_unaligned(texty_v_mape[id]+4);
      xa=(xa+320)-map_xr;
      ya=(ya+197)-map_yr;
      s=(char *)getmem(strlen(texty_v_mape[id]+12)+1);

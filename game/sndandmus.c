@@ -9,6 +9,7 @@
 #include "globals.h"
 #include <math.h>
 #include <libs/strlite.h>
+#include <libs/unaligned.h>
 
 #include <string.h>
 
@@ -281,7 +282,7 @@ const void *wav_load(const void *p, int32_t *s, int h)
   tgr=tg=getmem(*s+sizeof(struct t_wave)+4);
   memcpy(tgr,x,sizeof(struct t_wave));
   tg+=sizeof(struct t_wave);
-  *(int *)tg=*s;
+  write_i32_unaligned(tg, *s);
   tg+=4;
   read_chunk(sr,tg);
 
@@ -559,7 +560,7 @@ void play_sample_at_sector(int sample,int listener,int source,int track, char lo
      if (!s) return;
      p=(struct t_wave *)s;
      s+=sizeof(struct t_wave);
-     siz=*(int *)s;s+=4;
+     siz=read_i32_unaligned(s);s+=4;
      play_sample(chan,s,siz,loop?0:siz,p->freq,(p->freq!=p->bps?2:1));
      playings[chan].data=NULL;
      }
@@ -589,7 +590,7 @@ void play_sample_at_channel(int sample,int channel,int vol)
   s=ablock(sample);
   p=(struct t_wave *)s;
   s+=sizeof(struct t_wave);
-  siz=*(int *)s;s+=4;
+  siz=read_i32_unaligned(s);s+=4;
   play_sample(channel,s,siz,siz,p->freq,(p->freq!=p->bps?2:1));
   }
 
@@ -704,7 +705,7 @@ void stop_play_flute()
      q=ablock(H_FLETNA);
      w=q;w+=sizeof(struct t_wave);
      int ch = flute_channel+flute_channel_offset;
-     chan_break_ext(ch,w+4,*(int *)w);
+     chan_break_ext(ch,w+4,read_i32_unaligned(w));
      flute_channel_offset = (flute_channel_offset+1) & 7;
      }
   else

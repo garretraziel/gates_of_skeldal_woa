@@ -16,6 +16,7 @@
 #include <libs/basicobj.h>
 #include "engine1.h"
 #include <libs/pcx.h>
+#include <libs/unaligned.h>
 #include "globals.h"
 
 #include "lang.h"
@@ -385,7 +386,7 @@ void load_item_map(void *p,int32_t s)
   c=(short *)p;
   while (s>0)
      {
-     sect=*(int *)c;
+     sect=read_i32_unaligned(c);
      c+=sizeof(sect)/sizeof(short);s-=sizeof(sect);
      d=c;itmc=1;
      while (*d++) itmc++;
@@ -1397,7 +1398,7 @@ static T_INV_SCRIPT script[]=
 static int calc_value(int parm,int lenght)
   {
   int32_t l = 0;
-  if (parm>=0) l=*(int32_t *)(((char *)human_selected)+parm);
+  if (parm>=0) l=read_i32_unaligned(((char *)human_selected)+parm);
   else
      switch (parm)
         {
