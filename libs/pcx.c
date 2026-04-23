@@ -6,6 +6,7 @@
 
 #include <stdarg.h>
 #include <string.h>
+#include "unaligned.h"
 
 #define SHADE_STEPS 5
 #define SHADE_PAL (SHADE_STEPS*512*2)
@@ -134,9 +135,9 @@ int load_pcx(const char *pcx,int32_t fsize,int conv_type,char **buffer, ... )
      default: return -2; //invalid type specificied
      }
   ptr4=*buffer;
-  *(unsigned short *)ptr4++=xsize;ptr4++;
-  *(unsigned short *)ptr4++=ysize;ptr4++;
-  *(unsigned short *)ptr4++=conv_type;ptr4++;
+  write_u16_unaligned(ptr4, xsize); ptr4 += 2;
+  write_u16_unaligned(ptr4, ysize); ptr4 += 2;
+  write_u16_unaligned(ptr4, conv_type); ptr4 += 2;
   pcx+=sizeof(pcxdata);ptr3=pcx;
   if (conv_type==A_NORMAL_PAL)
      {

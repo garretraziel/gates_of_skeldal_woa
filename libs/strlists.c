@@ -7,6 +7,7 @@
 #include "bgraph.h"
 #include "gui.h"
 #include "strlists.h"
+#include "unaligned.h"
 
 
 
@@ -120,7 +121,7 @@ void string_list_draw(int x1,int y1,int x2,int y2,OBJREC *o)
         {
           j=p->skipshow;
           while (j-- && *c) c++;
-          if (i==*(int *)(o->data))
+          if (i==read_i32_unaligned(o->data))
           {
             curcolor=p->selcolor;
             bar32(x1,y,x2,y+znh-1);
@@ -210,13 +211,13 @@ void string_list_event(EVENT_MSG *msg,OBJREC *o)
         return;
 	 case E_KEYBOARD:
 	   {
-		 int pos=*(int *)(o->data);
-		 int  key=(*(int *)msg->data) & 0xff;
+		 int pos=read_i32_unaligned(o->data);
+		 int  key=read_i32_unaligned(msg->data) & 0xff;
 		 if (!key)
 		 {
 		   int save;
 		   int curLine;
-		   key=*(int *)msg->data >> 8;
+		   key=read_i32_unaligned(msg->data) >> 8;
 		   {
 			 do
 			 {
@@ -254,8 +255,8 @@ void string_list_event(EVENT_MSG *msg,OBJREC *o)
                   break;
            case 2:
                   i=get_to_topline(ls,p->topline,NULL);
-                  if (*(int *)o->data<i) p->topline=set_line_back(ls,*(int *)o->data);
-                  if (*(int *)o->data>=i+p->maxview) p->topline=set_line_back(ls,*(int *)o->data);
+                  if (read_i32_unaligned(o->data)<i) p->topline=set_line_back(ls,read_i32_unaligned(o->data));
+                  if (read_i32_unaligned(o->data)>=i+p->maxview) p->topline=set_line_back(ls,read_i32_unaligned(o->data));
                   break;
            }
         }

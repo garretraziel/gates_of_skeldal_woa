@@ -14,6 +14,7 @@
 #include "basicobj.h"
 #include <stdarg.h>
 #include <string.h>
+#include "unaligned.h"
 
 #define MEMTEXT "Pam�t: "
 
@@ -568,7 +569,7 @@ void radio_butts_draw(int x1,int y1,int x2,int y2,OBJREC *o)
      curcolor=ctl.light;
      line32(x1+sizpul+1,y1,x1+size,y1+sizpul);
      line32(x1+size,y1+sizpul,x1+sizpul+1,y1+size-1);
-     if (*(int32_t *)o->data==i) curcolor=0;else curcolor=cr;
+     if (read_i32_unaligned(o->data)==i) curcolor=0;else curcolor=cr;
      for (j=0;j<3;j++)
         {
         hor_line32(x1+sizpul-j,y1+sizpul-2+j,x1+sizpul+j);
@@ -596,10 +597,10 @@ void radio_butts_event(EVENT_MSG *msg,OBJREC *o)
         {
         sel=(ms->y-o->locy)/(o->ys/(*((int32_t *)o->userptr+1)));
         if (sel>=*((int32_t *)o->userptr+1)) sel=*((int32_t *)o->userptr+1)-1;
-        *(int32_t *)o->data=sel;
-        *(int32_t *)o->userptr=0;
+        write_i32_unaligned(o->data, sel);
+        write_i32_unaligned(o->userptr, 0);
         redraw_object(o);
-        *(int32_t *)o->userptr=1;
+        write_i32_unaligned(o->userptr, 1);
         set_change();
         }
      }

@@ -5,6 +5,7 @@
 
 #include "memman.h"
 #include "bgraph.h"
+#include "unaligned.h"
 
 
 #define VIEW_SIZE_X 640
@@ -146,6 +147,9 @@ void *p,*p2,*pozadi,*podlaha,*strop,*sit;int i;
 void (*zooming)(void *source,int32_t target,void *xlat,int32_t xysize);
 void (*turn)(int32_t lbuf,void *src1,void *src2,int size1);
 word *buffer_2nd;
+#ifdef _M_ARM64
+__declspec(align(4))
+#endif
 char debug=0,nosides=0,nofloors=0,drwsit=0;
 
 void zooming1(void *source,int32_t target,void *xlat,int32_t xysize)
@@ -478,7 +482,7 @@ void show_cel_l(int celx,int cely,void *stena)
      {
   zoom.startptr=buffer_2nd+(yd->drawline+x3d->xpos);
   zoom.texture=(void *)((byte *)stena+256*2*5+2*2+2+x3d->txtoffset);
-  zoom.texture_line=*(word *)stena;
+  zoom.texture_line=read_u16_unaligned(stena);
   zoom.xtable=&x3d->zoom_table;
   zoom.ytable=&yd->zoom_table;
   zoom.palette=(word *)((byte *)stena+6+512*cely);
@@ -501,7 +505,7 @@ void show_cel_r(int celx,int cely,void *stena)
      {
   zoom.startptr=buffer_2nd+(yd->drawline+639-x3d->xpos);
   zoom.texture=(void *)((byte *)stena+256*2*5+2*2+2+x3d->txtoffset);
-  zoom.texture_line=*(word *)stena;
+  zoom.texture_line=read_u16_unaligned(stena);
   zoom.xtable=&x3d->zoom_table;
   zoom.ytable=&yd->zoom_table;
   zoom.palette=(word *)((byte *)stena+6+512*cely);
@@ -525,7 +529,7 @@ void show_cel2_l(int celx,int cely,void *stena)
      {
   zoom.startptr=buffer_2nd+(yd->drawline+x3d->xpos);
   zoom.texture=(void *)((byte *)stena+256*2*5+2*2+2+x3d->txtoffset);
-  zoom.texture_line=*(word *)stena;
+  zoom.texture_line=read_u16_unaligned(stena);
   zoom.xtable=&x3d->zoom_table;
   zoom.ytable=&yd->zoom_table;
   zoom.palette=(word *)((byte *)stena+6+512*(/*cely*/+1));
@@ -548,7 +552,7 @@ void show_cel2_r(int celx,int cely,void *stena)
      {
   zoom.startptr=buffer_2nd+(yd->drawline+x3d->xpos2);
   zoom.texture=(void *)((byte *)stena+256*2*5+2*2+2);
-  zoom.texture_line=*(word *)stena;
+  zoom.texture_line=read_u16_unaligned(stena);
   zoom.xtable=&x3d->zoom_table;
   zoom.ytable=&yd->zoom_table;
   zoom.palette=(word *)((byte *)stena+6+512*(cely+1));

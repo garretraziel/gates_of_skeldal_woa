@@ -25,6 +25,7 @@
 #include "globals.h"
 #include "engine1.h"
 #include <stdarg.h>
+#include <libs/unaligned.h>
 
 
 #define MES_MAXSIZE 500
@@ -684,7 +685,7 @@ static void radio_butts_draw(int x1,int y1,int x2,int y2,OBJREC *o)
   clt=def_border(5,curcolor);
   for (i=0;i<*(params+1);i++,y1+=step)
      {
-     if (*(int32_t *)o->data==i)
+     if (read_i32_unaligned(o->data)==i)
         {
         int xx1=x1+2,yy1=y1+1,xx2=x1+size-2,yy2=y1+size-3,xxs=(xx1+xx2)>>1,yys=(yy1+yy2)>>1;
         curcolor=0x0;
@@ -723,7 +724,7 @@ static void radio_butts_event(EVENT_MSG *msg,OBJREC *o)
         params=(int32_t *)rd->texty;
         sel=(ms->y-o->locy)/(o->ys/(*(params+1)));
         if (sel>=*(params+1)) sel=*(params+1)-1;
-        *(int32_t *)o->data=sel;
+        write_i32_unaligned(o->data, sel);
         *params=0;
         redraw_object(o);
         *params=1;
@@ -1123,7 +1124,7 @@ static void skeldal_soupak_draw (int x1,int y1,int x2,int y2,OBJREC *o)
   rozsah=z->range;
   pic=ablock(H_SOUPAK);
   total=y2-y1-pic[1];
-  value=*(int *)o->data;
+  value=read_i32_unaligned(o->data);
   xpos=y2-pic[1]-value*total/rozsah;
   back=z->bgpic;
   if (back==NULL)
@@ -1160,7 +1161,7 @@ static void skeldal_soupak_event(EVENT_MSG *msg,OBJREC *o)
         newvalue=(o->ys-ypos)*rozsah/total;
         if (newvalue<0) newvalue=0;
         if (newvalue>rozsah) newvalue=rozsah;
-        *(int *)o->data=newvalue;
+        write_i32_unaligned(o->data, newvalue);
         redraw_object(o);
         set_change();
         }
