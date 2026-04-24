@@ -1,5 +1,11 @@
 # Visual Improvements Plan — Gates of Skeldal
 
+## Status
+- ✅ **Improvement 3: Pixel-art scalers** — DONE (Scale2x/Scale3x, F11 toggle)
+- 🔄 **Improvement 1: 32-bit color** — IN PROGRESS (branch: `visual/32bit-color`)
+- ⬜ **Improvement 4: Post-processing** — TODO
+- ⬜ **Improvement 2: AI-upscaled textures** — TODO
+
 ## Architecture Context
 
 - **Framebuffer**: 640×480, 16-bit RGB555 (`word*` buffers)
@@ -129,3 +135,142 @@
 - Improvements 2–4 benefit from Improvement 1 being done first
 - Improvement 3 is independent and can be done anytime
 - All improvements should be optional (INI-configurable) with zero-impact defaults
+
+---
+
+## Detailed Plan: 32-bit Color (RGB8888) Upgrade
+
+### Strategy
+
+Rather than changing every `word` to `uint32_t` across 30+ files, use a **typedef approach**:
+
+1. Define `pixel_t` as the pixel type (currently `uint16_t`, change to `uint32_t`)
+2. Update macros (`RGB555` → `RGB8888`) in one header
+3. Update palette conversion (8-bit indexed → 32-bit)
+4. Update screen buffers and pitch calculations
+5. Update SDL output (skip 16→32 conversion)
+
+### Phase 1: Foundation (types and macros)
+
+#### 1a. `platform/platform.h` — Core pixel type and color macros
+- Add `typedef uint32_t pixel_t;`
+- Change `RGB555(r,g,b)` macro to produce 32-bit: `((r<<19)|(g<<11)|(b<<3)|0xFF000000)`
+- Change `RGB555_ALPHA(r,g,b)` for transparent: `((r<<19)|(g<<11)|(b<<3))`
+- Change `BGSWITCHBIT` from `0x8000` to `0x80000000` (alpha bit)
+- Add backward-compat `RGB555to32(c)` converter for reading legacy 16-bit palette data
+
+#### 1b. `libs/types.h` — Keep `word` as `uint16_t` (it's used for non-pixel things too)
+
+#### 1c. `libs/bgraph.h` — Screen interface types
+- Change `curcolor` from `word` to `pixel_t`
+- Change `charcolors[7]` from `word` to `pixel_t`
+- Change `GetScreenAdr()` return from `word*` to `pixel_t*`
+- Change `showview` signature parameters if needed
+
+### Phase 2: Screen buffers
+
+#### 2a. `libs/bgraph2.c` — Buffer declarations
+- `word *screen` → `pixel_t *screen`
+- `word curcolor` → `pixel_t curcolor`
+- `word charcolors[7]` → `pixel_t charcolors[7]`
+- `screen_buffer_size` calculations: multiply by 4 instead of 2
+
+#### 2b. `platform/sdl/BGraph2.cpp` — SDL screen buffer
+- `screen_buffer` from `uint16_t[]` to `pixel_t[]`
+- `screen_pitch` stays in pixels (unchanged)
+- `present_rect` — change from `uint16_t*` to `pixel_t*`
+
+#### 2c. `libs/engine1.c` / `game/engine1.c` — Rendering buffers
+- `word *buffer_2nd` → `pixel_t *buffer_2nd`
+- All `memcpy` sizes that use `*2` → `*sizeof(pixel_t)`
+- `screen_buffer_size = 640*480*sizeof(pixel_t)`
+
+### Phase 3: Drawing primitives
+
+#### 3a. `libs/bgraph2a.c` — Lines, bars, font rendering
+- `bar32`, `hor_line32`, `ver_line32` — change `word*` → `pixel_t*`
+- `curcolor2` — 32-bit pair packing needs rethinking (was `curcolor | (curcolor<<16)`)
+- `char_32`, `char2_32` — font blitter pixel writes
+- `charsize` — unaffected (returns dimensions not pixels)
+
+#### 3b. `libs/bgraph2a.cpp` — Assembly font rendering (NOT COMPILED, skip)
+
+### Phase 4: Palette conversion
+
+#### 4a. `libs/pcx.c` — PCX loading
+- PCX files store 24-bit RGB palettes (768 bytes at end of file)
+- Currently converts to 16-bit RGB555 palette
+- Change to produce 32-bit RGBA palette entries
+- Lines 109-150 are the key conversion code
+
+#### 4b. `game/engine2.c` — Animation/sprite rendering
+- `word *paleta` → `pixel_t *paleta` in all functions
+- `small_anm_buff`, `small_anm_delta` — palette lookup produces pixel_t
+
+#### 4c. `libs/mgifplaya.c` — Video playback
+- `show_full_lfb12e`, `show_delta_lfb12e` — palette lookup → pixel_t output
+
+#### 4d. `libs/mgifmapmem.c` — MGIF animation
+- `paleta` pointer type change
+- `StretchImageHQ` — pixel type change
+
+### Phase 5: Rendering engine
+
+#### 5a. `libs/engine1.c` — 3D perspective engine
+- `word *palette` in zoom struct → `pixel_t *palette`
+- All texture rendering functions that write pixels
+- `zoom.palette` usage throughout
+
+#### 5b. `game/engine1.c` — Game-side 3D rendering
+- Same palette/pixel changes
+
+#### 5c. `game/builder.c` — Scene construction
+- Color blending code (lines ~800-810) — RGB channel extraction needs updating
+- `0x8000` transparency bit → `0x80000000`
+
+### Phase 6: UI and game code
+
+#### 6a. Files with `curcolor = RGB555(...)` assignments (many files):
+- `game/automap.c`, `game/chargen.c`, `game/dialogy.c`, `game/gamesave.c`
+- `game/interfac.c`, `game/inv.c`, `game/menu.c`, `game/skeldal.c`
+- `game/souboje.c`, `game/setup.c`, `game/console.c`
+- `libs/basicobj.c`, `libs/gui.c`
+- These should "just work" if `RGB555` macro is updated — verify each
+
+#### 6b. Files with RGB555 bit manipulation (CRITICAL):
+- `game/builder.c` — channel shifts `>>10`, `>>5`, `& 0x1F` → `>>16`, `>>8`, `& 0xFF`
+- `game/engine2.c` — `0x8000` transparency, `0x7BDE` blend mask
+- `game/skeldal.c` — `0x80008000`, `~0x1F`, `~BGSWITCHBIT`
+- `libs/basicobj.c` — `0x8000` / transparency checks
+- `libs/bgraph2.c` — pixel format bit extraction
+- `platform/sdl/sdl_context.cpp` — 16-bit unpacking (can be simplified for 32-bit)
+
+### Phase 7: SDL output
+
+#### 7a. `platform/sdl/sdl_context.cpp`
+- `present_rect` — accepts `pixel_t*` instead of `uint16_t*`
+- `update_texture_with_conversion` — when pixels are already 32-bit RGBA, skip conversion
+- Choose `SDL_PIXELFORMAT_ARGB8888` as default format
+- `convert_bitmap` templates can be simplified
+
+#### 7b. `platform/sdl/pixel_scaler.cpp`
+- Update Scale2x/Scale3x to work on `pixel_t` (uint32_t) instead of uint16_t
+
+### Phase 8: Asset compatibility layer
+
+#### 8a. Legacy palette conversion
+- Game data files store 16-bit RGB555 palettes
+- Add `RGB555to32()` function to convert on load
+- Apply in `pcx.c`, `mgifplaya.c`, `mgifmapmem.c`, `engine2.c`
+
+### Risk Summary
+
+| Risk | Impact | Mitigation |
+|------|--------|------------|
+| Screen buffer size doubles (640×480×4 = 1.2MB) | Low | Negligible on modern hardware |
+| Palette data in DDL is 16-bit | Medium | Convert on load with RGB555to32() |
+| Bit manipulation hardcoded in many files | High | Systematic search-and-replace |
+| `word` used for both pixels AND non-pixel data | High | Only change pixel-specific uses |
+| Pixel scaler needs updating | Low | Change uint16_t → pixel_t |
+
+### Estimated scope: ~35 files, ~500 lines of changes
