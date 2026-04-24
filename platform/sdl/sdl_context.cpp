@@ -288,6 +288,17 @@ int SDLContext::init_window(const VideoConfig &config, const char *title, std::f
     _fullscreen_mode = config.fullscreen;
     _mouse_size = config.cursor_size;
 
+    _pixel_scaler = config.pixel_scaler;
+    switch (_pixel_scaler) {
+        case PixelScaleType::scale2x: _scale_factor = 2; break;
+        case PixelScaleType::scale3x: _scale_factor = 3; break;
+        default: _scale_factor = 1; break;
+    }
+    if (_pixel_scaler != PixelScaleType::none) {
+        _shadow_buffer.resize(640 * 480, 0);
+        _scaled_buffer.resize(640 * _scale_factor * 480 * _scale_factor);
+    }
+
     std::atomic<bool> done = false;
     std::exception_ptr e;
     std::string_view stage;
@@ -383,6 +394,19 @@ int SDLContext::init_window(const VideoConfig &config, const char *title, std::f
         _visible_texture = _texture.get();
         _hidden_texture = _texture2.get();
 
+        if (_pixel_scaler != PixelScaleType::none) {
+            stage = "scaled render target";
+            int sw = 640 * _scale_factor;
+            int sh = 480 * _scale_factor;
+            SDL_Texture *stex = SDL_CreateTexture(_renderer.get(), _texture_render_format,
+                SDL_TEXTUREACCESS_STREAMING, sw, sh);
+            if (!stex) {
+                handle_sdl_error("Failed to create scaled render target");
+            }
+            SDL_SetTextureBlendMode(stex, SDL_BLENDMODE_BLEND);
+            _scaled_texture.reset(stex);
+        }
+
         std::stop_source stop_src;
 
         std::thread main_thrd([&]{
@@ -404,6 +428,7 @@ int SDLContext::init_window(const VideoConfig &config, const char *title, std::f
     }
     _texture.reset();
     _texture2.reset();
+    _scaled_texture.reset();
     _renderer.reset();
     _window.reset();
 
@@ -858,8 +883,10 @@ void SDLContext::refresh_screen() {
             }
         }
     } else {
-        SDL_SetTextureAlphaMod(_visible_texture, 255);
-        SDL_RenderCopy(_renderer.get(), _visible_texture, NULL, &winrc);
+        SDL_Texture *main_tex = (_pixel_scaler != PixelScaleType::none && _scaled_texture)
+                                ? _scaled_texture.get() : _visible_texture;
+        SDL_SetTextureAlphaMod(main_tex, 255);
+        SDL_RenderCopy(_renderer.get(), main_tex, NULL, &winrc);
     }
     for (const auto &sprite: _sprites) if (sprite.shown) {
         SDL_Rect rc = to_window_rect(winrc,sprite._rect);
@@ -904,6 +931,13 @@ void SDLContext::update_screen(bool force_refresh) {
                     pop_item(iter, r);
                     std::string_view data = pop_data(iter, r.w*r.h*2);
                     update_texture_with_conversion(_texture.get(), &r, data.data(), r.w*2);
+                    if (_pixel_scaler != PixelScaleType::none) {
+                        const uint16_t *src = reinterpret_cast<const uint16_t *>(data.data());
+                        for (int row = 0; row < r.h; ++row) {
+                            std::copy_n(src + row * r.w, r.w,
+                                        _shadow_buffer.data() + (r.y + row) * 640 + r.x);
+                        }
+                    }
                 }
                 break;
                 case DisplayRequest::show_mouse_cursor: {
@@ -1020,6 +1054,20 @@ void SDLContext::update_screen(bool force_refresh) {
         }
         _display_update_queue.clear();
 
+        if (_pixel_scaler != PixelScaleType::none && _scaled_texture) {
+            int dstW = 640 * _scale_factor;
+            int dstH = 480 * _scale_factor;
+            if (_pixel_scaler == PixelScaleType::scale2x) {
+                pixel_scale2x(_shadow_buffer.data(), _scaled_buffer.data(),
+                              640, 480, 640, dstW);
+            } else {
+                pixel_scale3x(_shadow_buffer.data(), _scaled_buffer.data(),
+                              640, 480, 640, dstW);
+            }
+            SDL_Rect full = {0, 0, dstW, dstH};
+            update_texture_with_conversion(_scaled_texture.get(), &full,
+                                           _scaled_buffer.data(), dstW * 2);
+        }
     }
     refresh_screen();
 }

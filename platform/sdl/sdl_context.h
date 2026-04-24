@@ -9,6 +9,7 @@
 #include <libs/mouse.h>
 #include <functional>
 #include "unique_value.h"
+#include "pixel_scaler.h"
 
 #include <queue>
 
@@ -31,6 +32,7 @@ public:
         int window_width;
         int window_height;
         CrtFilterType  crt_filter;
+        PixelScaleType pixel_scaler;
         int composer;
         const char *scale_quality;
         bool fullscreen;
@@ -242,6 +244,12 @@ protected:
     SDL_Texture *_visible_texture = nullptr;
     SDL_Texture *_hidden_texture = nullptr;
     uint32_t _texture_render_format = SDL_PIXELFORMAT_ARGB1555;
+
+    PixelScaleType _pixel_scaler = PixelScaleType::none;
+    int _scale_factor = 1;
+    std::vector<uint16_t> _shadow_buffer;
+    std::vector<uint16_t> _scaled_buffer;
+    std::unique_ptr<SDL_Texture, SDL_Deleter> _scaled_texture;
 
 
     bool _fullscreen_mode = false;

@@ -45,6 +45,11 @@ int game_display_init(const INI_CONFIG_SECTION *display_section,
     else if (istrcmp(filter,"rgbmatrix_3") == 0) cfg.crt_filter = SDLContext::CrtFilterType::rgb_matrix_3;
     else cfg.crt_filter = SDLContext::CrtFilterType::autoselect;
 
+    const char *pscaler = ini_get_string(display_section, "pixel_scaler", "none");
+    if (istrcmp(pscaler, "scale2x") == 0) cfg.pixel_scaler = PixelScaleType::scale2x;
+    else if (istrcmp(pscaler, "scale3x") == 0) cfg.pixel_scaler = PixelScaleType::scale3x;
+    else cfg.pixel_scaler = PixelScaleType::none;
+
     cfg.cursor_size = ini_get_int(display_section, "cursor_size", 100)*0.01f;
 
     screen_pitch = 640;
