@@ -288,6 +288,15 @@ int SDLContext::init_window(const VideoConfig &config, const char *title, std::f
     _fullscreen_mode = config.fullscreen;
     _mouse_size = config.cursor_size;
 
+    _pixel_scaler = config.pixel_scaler;
+    switch (_pixel_scaler) {
+        case PixelScaleType::scale2x: _scale_factor = 2; break;
+        case PixelScaleType::scale3x: _scale_factor = 3; break;
+        default: _scale_factor = 1; break;
+    }
+    // Shadow buffer allocated lazily on first use
+    // _shadow_buffer.resize(640 * 480, 0);
+
     std::atomic<bool> done = false;
     std::exception_ptr e;
     std::string_view stage;
@@ -383,6 +392,7 @@ int SDLContext::init_window(const VideoConfig &config, const char *title, std::f
         _visible_texture = _texture.get();
         _hidden_texture = _texture2.get();
 
+
         std::stop_source stop_src;
 
         std::thread main_thrd([&]{
@@ -402,6 +412,9 @@ int SDLContext::init_window(const VideoConfig &config, const char *title, std::f
         crash_sdl_exception();
         return -1;
     }
+    _pixel_scaler = PixelScaleType::none;
+    _shadow_buffer_ready = false;
+    _scaled_texture.reset();
     _texture.reset();
     _texture2.reset();
     _renderer.reset();
@@ -716,6 +729,53 @@ void SDLContext::event_loop(std::stop_token stp) {
                 if (e.key.keysym.sym == SDLK_RETURN && (e.key.keysym.mod & KMOD_ALT)) {
                     _fullscreen_mode = !_fullscreen_mode;
                     SDL_SetWindowFullscreen(_window.get(), _fullscreen_mode ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
+                } else if (e.key.keysym.sym == SDLK_F11) {
+                    // Toggle pixel scaler: none → scale2x → scale3x → none
+                    switch (_pixel_scaler) {
+                        case PixelScaleType::none:
+                            _pixel_scaler = PixelScaleType::scale2x;
+                            _scale_factor = 2;
+                            break;
+                        case PixelScaleType::scale2x:
+                            _pixel_scaler = PixelScaleType::scale3x;
+                            _scale_factor = 3;
+                            break;
+                        case PixelScaleType::scale3x:
+                            _pixel_scaler = PixelScaleType::none;
+                            _scale_factor = 1;
+                            break;
+                    }
+                    // Ensure buffers are allocated
+                    if (_shadow_buffer.empty()) {
+                        _shadow_buffer.resize(640 * 480, 0);
+                    }
+                    if (_scaled_buffer.empty()) {
+                        _scaled_buffer.resize(640 * 3 * 480 * 3);
+                    }
+                    {
+                        const char *mode = "none";
+                        if (_pixel_scaler == PixelScaleType::scale2x) mode = "Scale2x";
+                        else if (_pixel_scaler == PixelScaleType::scale3x) mode = "Scale3x";
+                        char title[128];
+                        snprintf(title, sizeof(title), "Skeldal [Scaler: %s]", mode);
+                        SDL_SetWindowTitle(_window.get(), title);
+                    }
+                    // Force immediate re-scale if shadow buffer has data
+                    if (_pixel_scaler != PixelScaleType::none && _scaled_texture && _shadow_buffer_ready) {
+                        int dstW = 640 * _scale_factor;
+                        int dstH = 480 * _scale_factor;
+                        if (_pixel_scaler == PixelScaleType::scale2x) {
+                            pixel_scale2x(_shadow_buffer.data(), _scaled_buffer.data(),
+                                          640, 480, 640, dstW);
+                        } else {
+                            pixel_scale3x(_shadow_buffer.data(), _scaled_buffer.data(),
+                                          640, 480, 640, dstW);
+                        }
+                        SDL_Rect full = {0, 0, dstW, dstH};
+                        update_texture_with_conversion(_scaled_texture.get(), &full,
+                                                       _scaled_buffer.data(), dstW * 2);
+                    }
+                    refresh_screen();
                 } else {
                     auto code =sdl_keycode_map.get_bios_code(e.key.keysym.scancode,
                             e.key.keysym.mod & KMOD_SHIFT, e.key.keysym.mod & KMOD_CTRL);
@@ -858,8 +918,16 @@ void SDLContext::refresh_screen() {
             }
         }
     } else {
-        SDL_SetTextureAlphaMod(_visible_texture, 255);
-        SDL_RenderCopy(_renderer.get(), _visible_texture, NULL, &winrc);
+        SDL_Texture *main_tex = _visible_texture;
+        SDL_Rect *src_rect = NULL;
+        SDL_Rect scaled_src = {};
+        if (_pixel_scaler != PixelScaleType::none && _scaled_texture && _shadow_buffer_ready) {
+            main_tex = _scaled_texture.get();
+            scaled_src = {0, 0, 640 * _scale_factor, 480 * _scale_factor};
+            src_rect = &scaled_src;
+        }
+        SDL_SetTextureAlphaMod(main_tex, 255);
+        SDL_RenderCopy(_renderer.get(), main_tex, src_rect, &winrc);
     }
     for (const auto &sprite: _sprites) if (sprite.shown) {
         SDL_Rect rc = to_window_rect(winrc,sprite._rect);
@@ -904,6 +972,17 @@ void SDLContext::update_screen(bool force_refresh) {
                     pop_item(iter, r);
                     std::string_view data = pop_data(iter, r.w*r.h*2);
                     update_texture_with_conversion(_texture.get(), &r, data.data(), r.w*2);
+                    // Maintain shadow buffer for scaler
+                    if (!_shadow_buffer.empty()) {
+                        const uint16_t *src = reinterpret_cast<const uint16_t *>(data.data());
+                        for (int row = 0; row < r.h; ++row) {
+                            std::copy_n(src + row * r.w, r.w,
+                                        _shadow_buffer.data() + (r.y + row) * 640 + r.x);
+                        }
+                        if (r.x == 0 && r.y == 0 && r.w >= 320 && r.h >= 180) {
+                            _shadow_buffer_ready = true;
+                        }
+                    }
                 }
                 break;
                 case DisplayRequest::show_mouse_cursor: {
@@ -1020,6 +1099,30 @@ void SDLContext::update_screen(bool force_refresh) {
         }
         _display_update_queue.clear();
 
+        if (_pixel_scaler != PixelScaleType::none && _shadow_buffer_ready) {
+            // Lazy-create scaled texture and buffer on first use
+            if (!_scaled_texture) {
+                int maxW = 640 * 3, maxH = 480 * 3;
+                _scaled_buffer.resize(maxW * maxH);
+                SDL_Texture *stex = SDL_CreateTexture(_renderer.get(),
+                    _texture_render_format, SDL_TEXTUREACCESS_STREAMING, maxW, maxH);
+                if (stex) _scaled_texture.reset(stex);
+            }
+            if (_scaled_texture) {
+            int dstW = 640 * _scale_factor;
+            int dstH = 480 * _scale_factor;
+            if (_pixel_scaler == PixelScaleType::scale2x) {
+                pixel_scale2x(_shadow_buffer.data(), _scaled_buffer.data(),
+                              640, 480, 640, dstW);
+            } else {
+                pixel_scale3x(_shadow_buffer.data(), _scaled_buffer.data(),
+                              640, 480, 640, dstW);
+            }
+            SDL_Rect full = {0, 0, dstW, dstH};
+            update_texture_with_conversion(_scaled_texture.get(), &full,
+                                           _scaled_buffer.data(), dstW * 2);
+            }
+        }
     }
     refresh_screen();
 }

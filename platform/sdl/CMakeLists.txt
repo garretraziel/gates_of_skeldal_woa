@@ -5,5 +5,6 @@ add_library(skeldal_sdl
             BGraph2.cpp 
             input.cpp 
             sound.cpp
-            sound_filter.cpp)
+            sound_filter.cpp
+            pixel_scaler.cpp)
 set_property(TARGET skeldal_sdl PROPERTY CXX_STANDARD 20)
