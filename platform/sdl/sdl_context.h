@@ -250,6 +250,7 @@ protected:
     std::vector<uint16_t> _shadow_buffer;
     std::vector<uint16_t> _scaled_buffer;
     std::unique_ptr<SDL_Texture, SDL_Deleter> _scaled_texture;
+    bool _shadow_buffer_ready = false;
 
 
     bool _fullscreen_mode = false;
