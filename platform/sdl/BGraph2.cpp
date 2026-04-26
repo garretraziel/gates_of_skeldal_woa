@@ -5,10 +5,10 @@
 #include "global_context.h"
 
 
-static std::unique_ptr<uint16_t[]> screen_buffer;
-static std::unique_ptr<uint16_t[]> buffer2nd;
-static uint16_t *render_target;
-static uint16_t screen_pitch = 640;
+static std::unique_ptr<pixel_t[]> screen_buffer;
+static std::unique_ptr<pixel_t[]> buffer2nd;
+static pixel_t *render_target;
+static int screen_pitch = 640;
 
 int game_display_init(const INI_CONFIG_SECTION *display_section,
             const char *title,
@@ -57,8 +57,8 @@ int game_display_init(const INI_CONFIG_SECTION *display_section,
 
 
     return get_sdl_global_context().init_window(cfg, title, [&]{
-        screen_buffer = std::make_unique<uint16_t[]>(screen_pitch*480);
-        buffer2nd = std::make_unique<uint16_t[]>(screen_pitch*480);
+        screen_buffer = std::make_unique<pixel_t[]>(screen_pitch*480);
+        buffer2nd = std::make_unique<pixel_t[]>(screen_pitch*480);
         std::fill(screen_buffer.get(), screen_buffer.get()+screen_pitch*480,0);
         render_target = screen_buffer.get();
         return game_thread(args);
@@ -67,10 +67,10 @@ int game_display_init(const INI_CONFIG_SECTION *display_section,
 }
 
 
-uint16_t *GetScreenAdr() {
+pixel_t *GetScreenAdr() {
     return render_target;
 }
-uint16_t *GetBuffer2nd() {
+pixel_t *GetBuffer2nd() {
     return buffer2nd.get();
 
 }
@@ -81,10 +81,10 @@ int32_t GetBuffer2ndPitch() {
     return screen_pitch;
 }
 int32_t GetScreenSizeBytes() {
-    return screen_pitch * 480 * 2;
+    return screen_pitch * 480 * sizeof(pixel_t);
 }
 
-void RedirectScreen(uint16_t *newaddr) {
+void RedirectScreen(pixel_t *newaddr) {
     render_target = newaddr;
 }
 void RestoreScreen() {
@@ -119,11 +119,11 @@ void game_display_hide_mouse() {
 
 void StripBlt(const void *data, unsigned int startline, uint32_t width) {
 
-    unsigned short *start=startline*GetScreenPitch()+GetScreenAdr();
+    pixel_t *start=startline*GetScreenPitch()+GetScreenAdr();
     while (width--)
     {
-      memcpy(start,data,640*2);
-      data=(void *)(reinterpret_cast<const short *>(data)+GetScreenPitch());
+      memcpy(start,data,640*sizeof(pixel_t));
+      data=(void *)(reinterpret_cast<const pixel_t *>(data)+GetScreenPitch());
       start=start+GetScreenPitch();
     }
 
