@@ -54,7 +54,7 @@ void show_delta_lfb12e(void *target,void *buff,void *paleta)
 //        mov     edx,esi         ;edx - zacatek delta mapy
     uint8_t *data = (esi + offset);
 //        add     esi,[esi-4]     ;esi - zacatek dat
-    uint16_t *line_beg = edi;
+    pixel_t *line_beg = edi;
 //shdl6: push    edi             ;uloz adresu radku
     while (cl>0) {
         uint8_t ch = *edx++;
