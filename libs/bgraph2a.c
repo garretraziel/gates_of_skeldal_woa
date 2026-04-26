@@ -358,11 +358,31 @@ void put_picture_ex(word x,word y,const void *p, pixel_t *target_addr, size_t pi
         data++;
         }
     }
-  if (mode==8 || mode==264)
+  if (mode==808 || mode==(808+256))
     {
+    // PCX-loaded: palette is pixel_t (32-bit)
     const pixel_t *table=(const pixel_t *)((const char *)p + 6);
-    int palette_entries = (mode==264 ? 10*256 : 256);
+    int palette_entries = (mode==(808+256) ? 10*256 : 256);
     uint8_t *cdata=(uint8_t *)(table + palette_entries);
+    int i;
+    int j;
+
+    for (i=0;i<yss;i++,adr+=scr_linelen2,cdata+=(xs-xss))
+      for (j=0;j<xss;j++)
+        {
+        if (*cdata)
+        adr[j]=table[*cdata];
+        cdata++;
+        }
+    }
+  else if (mode==8 || mode==264)
+    {
+    // Raw DDL: palette is word (16-bit RGB555)
+    const word *raw_table=(const word *)((const char *)p + 6);
+    int palette_entries = (mode==264 ? 10*256 : 256);
+    DECL_VLA(pixel_t, table, palette_entries);
+    for (int k = 0; k < palette_entries; k++) table[k] = rgb555to32(raw_table[k]);
+    uint8_t *cdata=(uint8_t *)(raw_table + palette_entries);
     int i;
     int j;
 
@@ -376,8 +396,11 @@ void put_picture_ex(word x,word y,const void *p, pixel_t *target_addr, size_t pi
     }
   else if (mode==512 )
     {
-    const pixel_t *table=(const pixel_t *)((const char *)p + 6);
-    uint8_t *cdata=(uint8_t *)(table+256);
+    // Raw DDL: palette is word (16-bit RGB555)
+    const word *raw_table=(const word *)((const char *)p + 6);
+    DECL_VLA(pixel_t, table, 256);
+    for (int k = 0; k < 256; k++) table[k] = rgb555to32(raw_table[k]);
+    uint8_t *cdata=(uint8_t *)(raw_table+256);
     int i;
     int j;
 

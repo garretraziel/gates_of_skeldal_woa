@@ -137,7 +137,12 @@ int load_pcx(const char *pcx,int32_t fsize,int conv_type,char **buffer, ... )
   ptr4=*buffer;
   write_u16_unaligned(ptr4, xsize); ptr4 += 2;
   write_u16_unaligned(ptr4, ysize); ptr4 += 2;
-  write_u16_unaligned(ptr4, conv_type == A_16BIT ? 32 : conv_type); ptr4 += 2;
+  // Use mode 808 for A_8BIT to indicate pixel_t palette (vs raw 16-bit mode 8)
+  int stored_mode = conv_type;
+  if (stored_mode == A_16BIT) stored_mode = 32;
+  else if (stored_mode == A_8BIT) stored_mode = 808;
+  else if (stored_mode == A_FADE_PAL) stored_mode = 808 + 256;
+  write_u16_unaligned(ptr4, stored_mode); ptr4 += 2;
   pcx+=sizeof(pcxdata);ptr3=pcx;
   if (conv_type==A_NORMAL_PAL)
      {
