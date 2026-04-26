@@ -12,27 +12,27 @@
 
 
 
-static const word *paleta;
+static pixel_t paleta[256];
 
-static word *picture;
-static word *anim_render_buffer;
+static pixel_t *picture;
+static pixel_t *anim_render_buffer;
 static void *sound;
 
-static inline word avg_pixels(word a, word b) {
-    return ((a & 0x7BDE)+(b & 0x7BDE)) >> 1;
+static inline pixel_t avg_pixels(pixel_t a, pixel_t b) {
+    return BLEND_PIXELS(a, b);
 }
 
-static void StretchImageHQ(word *src, word *trg, int32_t linelen, char full)
+static void StretchImageHQ(pixel_t *src, pixel_t *trg, int32_t linelen, char full)
   {
-  word xs=src[0],ys=src[1];
+  word xs=((word *)src)[0],ys=((word *)src)[1];
 
-  word *src_row = src+3;
-  word *trg_row = trg;
+  pixel_t *src_row = (pixel_t *)((char *)src + 6);
+  pixel_t *trg_row = trg;
 
   for(int y = 0; y < ys; ++y) {
 
       for (int x = 0; x < xs; ++x) {
-          word n = src_row[x];
+          pixel_t n = src_row[x];
           trg_row[2*x] = n;
       }
 
@@ -41,13 +41,13 @@ static void StretchImageHQ(word *src, word *trg, int32_t linelen, char full)
 /*
       if (y+1 < ys ) {
           for (int x = 0; x < xs; ++x) {
-              word n1 = src_row[x];
-              word n2 = src_row[x+xs];
-              word n3 = y > 0?src_row[x-xs]:n1;
-              word n4 = y < (ys-2)?src_row[x+2*xs]:n2;
-              word n5 = avg_pixels(n1, n2);
-              word n6 = avg_pixels(n3, n4);
-              word n7 = avg_pixels(n5, n6);
+              pixel_t n1 = src_row[x];
+              pixel_t n2 = src_row[x+xs];
+              pixel_t n3 = y > 0?src_row[x-xs]:n1;
+              pixel_t n4 = y < (ys-2)?src_row[x+2*xs]:n2;
+              pixel_t n5 = avg_pixels(n1, n2);
+              pixel_t n6 = avg_pixels(n3, n4);
+              pixel_t n7 = avg_pixels(n5, n6);
               trg_row[2*x] = n7;
               trg_row[2*x+1] = n7;
           }
@@ -62,13 +62,13 @@ static void StretchImageHQ(word *src, word *trg, int32_t linelen, char full)
 
   for (int y = 0; y < ys; ++y) {
       for (int x = 0; x < xs-1; ++x) {
-          word n1 = trg_row[2*x];
-          word n2 = trg_row[2*x+2];
-          word n3 = x > 0?trg_row[2*x-2]:n1;
-          word n4 = x < (xs-2)?trg_row[2*x+2]:n2;
-          word n5 = avg_pixels(n1, n2);
-          word n6 = avg_pixels(n3, n4);
-          word n7 = avg_pixels(n5, n6);
+          pixel_t n1 = trg_row[2*x];
+          pixel_t n2 = trg_row[2*x+2];
+          pixel_t n3 = x > 0?trg_row[2*x-2]:n1;
+          pixel_t n4 = x < (xs-2)?trg_row[2*x+2]:n2;
+          pixel_t n5 = avg_pixels(n1, n2);
+          pixel_t n6 = avg_pixels(n3, n4);
+          pixel_t n7 = avg_pixels(n5, n6);
           trg_row[2*x+1] = n7;
       }
       trg_row += 2*linelen;
@@ -78,13 +78,13 @@ static void StretchImageHQ(word *src, word *trg, int32_t linelen, char full)
 
   for (int y = 0; y < ys-1; ++y) {
       for (int x = 0; x < 2*xs; ++x) {
-          word n1 = trg_row[x];
-          word n2 = trg_row[x+2*linelen];
-          word n3 = y > 1?trg_row[x-2*linelen]:n1;
-          word n4 = y < (ys-2)?trg_row[x+4*linelen]:n2;
-          word n5 = avg_pixels(n1, n2);
-          word n6 = avg_pixels(n3, n4);
-          word n7 = avg_pixels(n5, n6);
+          pixel_t n1 = trg_row[x];
+          pixel_t n2 = trg_row[x+2*linelen];
+          pixel_t n3 = y > 1?trg_row[x-2*linelen]:n1;
+          pixel_t n4 = y < (ys-2)?trg_row[x+4*linelen]:n2;
+          pixel_t n5 = avg_pixels(n1, n2);
+          pixel_t n6 = avg_pixels(n3, n4);
+          pixel_t n7 = avg_pixels(n5, n6);
           trg_row[x+linelen] = avg_pixels(n7,0);
       }
       trg_row += 2*linelen;
@@ -130,12 +130,12 @@ static void PlayMGFFile(const void *file, MGIF_PROC proc,int ypos,char full)
   int32_t scr_linelen2 = GetScreenPitch();
   mgif_install_proc(proc);
   sound=PrepareVideoSound(22050,226*1024);
-  picture=getmem(2*3+320*180*2);
-  picture[0]=320;
-  picture[1]=180;
-  picture[2]=15;
-  memset(picture+3,0,320*180*2);
-  anim_render_buffer=picture+3;
+  picture=getmem(6+320*180*sizeof(pixel_t));
+  ((word *)picture)[0]=320;
+  ((word *)picture)[1]=180;
+  ((word *)picture)[2]=15;
+  memset((char *)picture+6,0,320*180*sizeof(pixel_t));
+  anim_render_buffer=(pixel_t *)((char *)picture+6);
   file=open_mgif(file);
   if (file==NULL) return;
   MGIF_HEADER_T *hdr =(MGIF_HEADER_T *)file;
@@ -176,7 +176,7 @@ void BigPlayProc(MGIF_HEADER_T *hdr,int act,const void *data,int csize)
      case MGIF_LZW:
      case MGIF_COPY:show_full_lfb12e(anim_render_buffer,data,paleta);break;
      case MGIF_DELTA:show_delta_lfb12e(anim_render_buffer,data,paleta);break;
-     case MGIF_PAL:paleta=data;break;
+     case MGIF_PAL:{const word *src16=(const word *)data;int i;for(i=0;i<256;i++)paleta[i]=rgb555to32(src16[i]);}break;
 	 case MGIF_SOUND:
 	   while (LoadNextVideoFrame(sound,data,csize,hdr->ampl_table,hdr->accnums,&hdr->sound_write_pos)==0);
      }

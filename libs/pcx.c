@@ -9,7 +9,7 @@
 #include "unaligned.h"
 
 #define SHADE_STEPS 5
-#define SHADE_PAL (SHADE_STEPS*512*2)
+#define SHADE_PAL (SHADE_STEPS*256*(int)sizeof(pixel_t)*2)
 
 void *get_palette_ptr=NULL;
 
@@ -32,7 +32,7 @@ void decomprimate_line_256(const char *src,char *trg,int linelen,int *srcstep)
      }
   *srcstep=src-srcsave;
   }
-void decomprimate_line_hi(const char *src,unsigned short *trg,unsigned short *paleta,int linelen,int *srcstep)
+void decomprimate_line_hi(const char *src,pixel_t *trg,pixel_t *paleta,int linelen,int *srcstep)
   {
   const char *srcsave;
 
@@ -53,12 +53,12 @@ void decomprimate_line_hi(const char *src,unsigned short *trg,unsigned short *pa
   *srcstep=src-srcsave;
   }
 
-void palette_shadow(const char *pal1,unsigned short pal2[][256],int tr,int tg,int tb)
+void palette_shadow(const char *pal1,pixel_t pal2[][256],int tr,int tg,int tb)
   {
   int i,j;
   const char *bt;
   int r,g,b;
-  short hi;
+  pixel_t hi;
 
   for (j=0;j<SHADE_STEPS;j++)
      {
@@ -66,10 +66,10 @@ void palette_shadow(const char *pal1,unsigned short pal2[][256],int tr,int tg,in
      i=0;
      do
        {
-       r=(tr+(*(bt++)-tr)*(3*SHADE_STEPS-3*j-1)/(3*SHADE_STEPS-1))>>3;
-       g=(tg+(*(bt++)-tg)*(3*SHADE_STEPS-3*j-1)/(3*SHADE_STEPS-1))>>3;
-       b=(tb+(*(bt++)-tb)*(3*SHADE_STEPS-3*j-1)/(3*SHADE_STEPS-1))>>3;
-       hi=RGB555(r,g,b);
+       r=(tr+(*(bt++)-tr)*(3*SHADE_STEPS-3*j-1)/(3*SHADE_STEPS-1));
+       g=(tg+(*(bt++)-tg)*(3*SHADE_STEPS-3*j-1)/(3*SHADE_STEPS-1));
+       b=(tb+(*(bt++)-tb)*(3*SHADE_STEPS-3*j-1)/(3*SHADE_STEPS-1));
+       hi=RGB888(r,g,b);
        pal2[j][i]=hi;
        }
     while (++i & 0xff);
@@ -80,10 +80,10 @@ void palette_shadow(const char *pal1,unsigned short pal2[][256],int tr,int tg,in
      i=0;
      do
        {
-       r=((*(bt++))*(SHADE_STEPS-j)/SHADE_STEPS)>>3;
-       g=((*(bt++))*(SHADE_STEPS-j)/SHADE_STEPS)>>3;
-       b=((*(bt++))*(SHADE_STEPS-j)/SHADE_STEPS)>>3;
-       hi=RGB555(r,g,b);
+       r=((*(bt++))*(SHADE_STEPS-j)/SHADE_STEPS);
+       g=((*(bt++))*(SHADE_STEPS-j)/SHADE_STEPS);
+       b=((*(bt++))*(SHADE_STEPS-j)/SHADE_STEPS);
+       hi=RGB888(r,g,b);
        pal2[j+SHADE_STEPS][i]=hi;
        }
     while (++i & 0xff);
@@ -94,11 +94,11 @@ void palette_shadow(const char *pal1,unsigned short pal2[][256],int tr,int tg,in
 int load_pcx(const char *pcx,int32_t fsize,int conv_type,char **buffer, ... )
   //dale nasleduji int hodnoty poctu prechodu a R,G,B barvy
   {
-  unsigned short paleta2[256];
+  pixel_t paleta2[256];
   const char *paleta1;
   const char *ptr1;
   char *ptr4;
-  unsigned short *ptr2;
+  pixel_t *ptr2;
   const char *ptr3;
   int i;
   PCXHEADER pcxdata;
@@ -126,9 +126,9 @@ int load_pcx(const char *pcx,int32_t fsize,int conv_type,char **buffer, ... )
   int sz = 0;
   switch (conv_type)
      {
-     case A_8BIT: *buffer=(char *)getmem(sz = xsize*ysize+512+16);break;
-     case A_16BIT_ZERO_TRANSP:conv_type = A_16BIT; paleta2[0] = 0x8000;CASE_FALLTHROUGH;
-     case A_16BIT: *buffer=(char *)getmem(sz = xsize*ysize*2+16);break;
+     case A_8BIT: *buffer=(char *)getmem(sz = xsize*ysize+256*sizeof(pixel_t)+16);break;
+     case A_16BIT_ZERO_TRANSP:conv_type = A_16BIT; paleta2[0] = BGSWITCHBIT;CASE_FALLTHROUGH;
+     case A_16BIT: *buffer=(char *)getmem(sz = xsize*ysize*sizeof(pixel_t)+16);break;
      case A_FADE_PAL: *buffer=(char *)getmem(sz = xsize*ysize+SHADE_PAL+16);break;
      case A_8BIT_NOPAL: *buffer=(char *)getmem(sz = xsize*ysize+16);break;
      case A_NORMAL_PAL: *buffer=(char *)getmem(sz = xsize*ysize+16+768);break;
@@ -146,8 +146,8 @@ int load_pcx(const char *pcx,int32_t fsize,int conv_type,char **buffer, ... )
      }
   if (conv_type==A_8BIT)
      {
-     memcpy(ptr4,paleta2,512);
-     ptr4+=512;
+     memcpy(ptr4,paleta2,256*sizeof(pixel_t));
+     ptr4+=256*sizeof(pixel_t);
      }
   if (conv_type==A_FADE_PAL)
      {
@@ -159,7 +159,7 @@ int load_pcx(const char *pcx,int32_t fsize,int conv_type,char **buffer, ... )
      tg=va_arg(lst,int);
      tb=va_arg(lst,int);
      va_end(lst);
-     palette_shadow(paleta1,(unsigned short (*)[256])ptr4,tr,tg,tb);
+     palette_shadow(paleta1,(pixel_t (*)[256])ptr4,tr,tg,tb);
      ptr4+=SHADE_PAL;
      }
   ysize++;
@@ -168,8 +168,8 @@ int load_pcx(const char *pcx,int32_t fsize,int conv_type,char **buffer, ... )
      int step;
      if (conv_type==A_16BIT)
         {
-        decomprimate_line_hi(ptr3,(unsigned short *)ptr4,paleta2,pcxdata.bytesperline,&step);
-        ptr4+=2*xsize;
+        decomprimate_line_hi(ptr3,(pixel_t *)ptr4,paleta2,pcxdata.bytesperline,&step);
+        ptr4+=sizeof(pixel_t)*xsize;
         }
      else
         {

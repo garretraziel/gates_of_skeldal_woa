@@ -37,7 +37,7 @@ typedef struct zoominfo
      int32_t texture_line,line_len;
      int32_t *xtable;
      short *ytable;
-     word *palette;
+     pixel_t *palette;
      word ycount;
      word xmax;
   }ZOOMINFO;
@@ -326,7 +326,7 @@ void create_tables(void)
       xr=xr*(y1+1)/points[0][0][0].y+MIDDLE_X;
       if (xl<0) xl=0;if (xr<0) xr=0;
       if (xl>639) xl=639;if (xr>639) xr=639;
-      showtabs.f_table[x][y].lineofs=(y1+MIDDLE_Y)*1280+xl*2;
+      showtabs.f_table[x][y].lineofs=(y1+MIDDLE_Y)*640*(int)sizeof(pixel_t)+xl*(int)sizeof(pixel_t);
       showtabs.f_table[x][y].linesize=xr-xl;
       showtabs.f_table[x][y].counter=(y1-points[0][0][yp].y);
       }
@@ -355,7 +355,7 @@ void create_tables(void)
       xr=xr*(y1-1)/points[0][1][0].y+MIDDLE_X;
       if (xl<0) xl=0;if (xr<0) xr=0;
       if (xl>639) xl=639;if (xr>639) xr=639;
-      showtabs.c_table[x][y].lineofs=(y1+MIDDLE_Y)*1280+xl*2;
+      showtabs.c_table[x][y].lineofs=(y1+MIDDLE_Y)*640*(int)sizeof(pixel_t)+xl*(int)sizeof(pixel_t);
       showtabs.c_table[x][y].linesize=xr-xl;
       showtabs.c_table[x][y].counter=points[0][1][yp].y-y1;
       }
@@ -387,7 +387,7 @@ void create_zooming(void)
      {
      calc_zooming(&zooming_xtable[j],320,zooming_points[j][0]);
      calc_y_buffer(&zooming_ytable[j],zooming_points[j][1],360,360);
-     for(i=0;i<360;i++) zooming_ytable[j][i]*=1280;
+     for(i=0;i<360;i++) zooming_ytable[j][i]*=640*sizeof(pixel_t);
      }
 
 /*  calc_zooming(&zooming_xtable[0],320,570);
@@ -485,10 +485,10 @@ void show_cel_l(int celx,int cely,void *stena)
   zoom.texture_line=read_u16_unaligned(stena);
   zoom.xtable=&x3d->zoom_table;
   zoom.ytable=&yd->zoom_table;
-  zoom.palette=(word *)((byte *)stena+6+512*cely);
+  zoom.palette=(pixel_t *)((byte *)stena+6+256*sizeof(pixel_t)*cely);
   zoom.ycount=yd->vert_size*(*((word *)stena+1))/TXT_SIZE_Y;
   if (zoom.ycount>yd->vert_total) zoom.ycount=yd->vert_total;
-  zoom.line_len=1280;
+  zoom.line_len=640*sizeof(pixel_t)*2;
   zoom.xmax=VIEW_SIZE_X;
   sikma_zleva();
      }
@@ -508,10 +508,10 @@ void show_cel_r(int celx,int cely,void *stena)
   zoom.texture_line=read_u16_unaligned(stena);
   zoom.xtable=&x3d->zoom_table;
   zoom.ytable=&yd->zoom_table;
-  zoom.palette=(word *)((byte *)stena+6+512*cely);
+  zoom.palette=(pixel_t *)((byte *)stena+6+256*sizeof(pixel_t)*cely);
   zoom.ycount=yd->vert_size*(*((word *)stena+1))/TXT_SIZE_Y;
   if (zoom.ycount>yd->vert_total) zoom.ycount=yd->vert_total;
-  zoom.line_len=1280;
+  zoom.line_len=640*sizeof(pixel_t)*2;
   zoom.xmax=VIEW_SIZE_X;
   sikma_zprava();
      }
@@ -532,11 +532,11 @@ void show_cel2_l(int celx,int cely,void *stena)
   zoom.texture_line=read_u16_unaligned(stena);
   zoom.xtable=&x3d->zoom_table;
   zoom.ytable=&yd->zoom_table;
-  zoom.palette=(word *)((byte *)stena+6+512*(/*cely*/+1));
+  zoom.palette=(pixel_t *)((byte *)stena+6+256*sizeof(pixel_t)*(/*cely*/+1));
   zoom.ycount=yd->vert_size*(*((word *)stena+1))/TXT_SIZE_Y;
   if (zoom.ycount>yd->vert_total) zoom.ycount=yd->vert_total;
   zoom.xmax=x3d->max_x;
-  zoom.line_len=1280;
+  zoom.line_len=640*sizeof(pixel_t)*2;
   sikma_zleva();
      }
   }
@@ -555,10 +555,10 @@ void show_cel2_r(int celx,int cely,void *stena)
   zoom.texture_line=read_u16_unaligned(stena);
   zoom.xtable=&x3d->zoom_table;
   zoom.ytable=&yd->zoom_table;
-  zoom.palette=(word *)((byte *)stena+6+512*(cely+1));
+  zoom.palette=(pixel_t *)((byte *)stena+6+256*sizeof(pixel_t)*(cely+1));
   zoom.ycount=yd->vert_size*(*((word *)stena+1))/TXT_SIZE_Y;
   if (zoom.ycount>yd->vert_total) zoom.ycount=yd->vert_total;
-  zoom.line_len=1280;
+  zoom.line_len=640*sizeof(pixel_t)*2;
   zoom.xmax=x3d->max_x;
   sikma_zleva();
      }
@@ -578,7 +578,7 @@ void draw_floor_ceil(int celx,int cely,char f_c,void *txtr)
      fcdraw(txtr,buffer_2nd+SCREEN_OFFSET,&showtabs.f_table[celx+2][y]);
      if (debug)
         {
-         memcpy(screen,buffer_2nd,512000);
+         memcpy(screen,buffer_2nd,640*400*sizeof(pixel_t));
          showview(0,0,0,0);
         }
      }
@@ -589,7 +589,7 @@ void draw_floor_ceil(int celx,int cely,char f_c,void *txtr)
      fcdraw(txtr,buffer_2nd+SCREEN_OFFSET,&showtabs.c_table[celx+2][y]);
      if (debug)
         {
-         memcpy(screen,buffer_2nd,512000);
+         memcpy(screen,buffer_2nd,640*400*sizeof(pixel_t));
          showview(0,0,0,0);
         }
      }
@@ -824,7 +824,7 @@ void ask_video(void)
          "  2) 640x480xHiColor Pomale pocitace\n"
          "  3) 640x480x256 Rychle pocitace\n"
          "  4) 640x480xHiColor Rychle pocitace\n");
-  screen_buffer_size=640*480*2;
+  screen_buffer_size=640*480*sizeof(pixel_t);
     do
      {
      c=_bios_keybrd(_KEYBRD_READ)>>8;ok=1;er=0;

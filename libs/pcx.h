@@ -1,6 +1,8 @@
 #ifndef _PCX_H_
 #define _PCX_H_
 
+#include <platform/platform.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -34,7 +36,7 @@ extern "C" {
 //returns <0 error, >0 allocated size
 int load_pcx(const char *pcx,int32_t fsize,int conv_type,char **buffer, ... );
 int open_pcx(const char *filename,int type,char **buffer,...);
-void palette_shadow(const char *pal1,unsigned short pal2[][256],int tr,int tg,int tb);
+void palette_shadow(const char *pal1,pixel_t pal2[][256],int tr,int tg,int tb);
 extern void *get_palette_ptr;
 
 #ifdef __cplusplus

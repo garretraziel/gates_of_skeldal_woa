@@ -1,5 +1,6 @@
 #ifndef __ENGINE1_H
 #define __ENGINE1_H
+#include <platform/platform.h>
 #define VIEW_SIZE_X 640
 #define VIEW_SIZE_Y 360
 #define TAB_SIZE_X 640
@@ -24,7 +25,7 @@
 #define CF_XMAP_SIZE 7
 
 #define SHADE_STEPS 5
-#define SHADE_PAL (SHADE_STEPS*512*2)
+#define SHADE_PAL (SHADE_STEPS*256*(int)sizeof(pixel_t)*2)
 
 
 void general_engine_init(void);
@@ -45,7 +46,7 @@ void draw_item2(int celx,int cely,int xpos,int ypos,const void *texture,int inde
 //#pragma aux textmode_effekt modify[eax ebx ecx edx edi];
 
 
-void clear_buff(word *background,word backcolor,int lines);
+void clear_buff(pixel_t *background,pixel_t backcolor,int lines);
 
 typedef struct zoominfo
   {
@@ -54,7 +55,7 @@ typedef struct zoominfo
      int32_t texture_line,line_len;
      int32_t *xtable;
      short *ytable;
-     word *palette;
+     pixel_t *palette;
      word ycount;
      word xmax;
      const void *texture_end;

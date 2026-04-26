@@ -8,7 +8,7 @@
 
 void bar32(int x1,int y1, int x2, int y2)
   {
-  word *begline;
+  pixel_t *begline;
   int i,j;
 
   int mx =  DxGetResX() - 1;
@@ -29,9 +29,8 @@ void bar32(int x1,int y1, int x2, int y2)
 
 void hor_line32(int x1,int y1,int x2)
   {
-  word *begline;
+  pixel_t *begline;
   int i;
-  uint32_t curcolor2=curcolor | (curcolor<<16);
 
   int mx =  DxGetResX() - 1;
   int my =  DxGetResY() - 1;
@@ -42,8 +41,7 @@ void hor_line32(int x1,int y1,int x2)
   if (x2>mx) x2=mx;
   int32_t scr_linelen2 = GetScreenPitch();
   begline=GetScreenAdr()+scr_linelen2*y1;
-  for (i=x1;i<x2;i+=2) write_u32_unaligned(begline+i, curcolor2);
-  if (i==x2) begline[i]=curcolor;
+  for (i=x1;i<=x2;i++) begline[i]=curcolor;
   }
 
 void ver_line32(int x1,int y1,int y2)
@@ -51,7 +49,7 @@ void ver_line32(int x1,int y1,int y2)
   int mx =  DxGetResX() - 1;
   int my =  DxGetResY() - 1;
 
-  word *begline;
+  pixel_t *begline;
   int i;
   if (y1>y2) swap_int(y1,y2);
   if (x1<0 || x1>mx) return;
@@ -64,9 +62,8 @@ void ver_line32(int x1,int y1,int y2)
 
 void hor_line_xor(int x1,int y1,int x2)
   {
-  word *begline;
+  pixel_t *begline;
   int i;
-  uint32_t curcolor2=curcolor | (curcolor<<16);
 
   int mx =  DxGetResX() - 1;
   int my =  DxGetResY() - 1;
@@ -77,13 +74,12 @@ void hor_line_xor(int x1,int y1,int x2)
   if (x2>mx) x2=mx;
   int32_t scr_linelen2 = GetScreenPitch();
   begline=GetScreenAdr()+scr_linelen2*y1;
-  for (i=x1;i<x2;i+=2) { uint32_t tmp = read_u32_unaligned(begline+i); tmp ^= curcolor2; write_u32_unaligned(begline+i, tmp); }
-  if (i==x2) begline[i]^=curcolor;
+  for (i=x1;i<=x2;i++) begline[i]^=curcolor;
   }
 
 void ver_line_xor(int x1,int y1,int y2)
   {
-  word *begline;
+  pixel_t *begline;
   int i;
 
   int mx =  DxGetResX() - 1;
@@ -121,21 +117,21 @@ void line_32(int x,int y,int xs,int ys)
 	}
   }
 
-static inline word avg_pixels(word a, word b) {
-    return ((a & 0x7BDE)+(b & 0x7BDE)) >> 1;
+static inline pixel_t avg_pixels(pixel_t a, pixel_t b) {
+    return BLEND_PIXELS(a, b);
 }
 
 
-void char_32(word *posit,const word *font,char znak)
+void char_32(pixel_t *posit,const word *font,char znak)
 //#pragma aux char_32 parm [edi] [esi] [eax] modify [eax ebx ecx edx]
   {
     int32_t scr_linelen2 = GetScreenPitch();
 
-	word *edi = posit;
+	pixel_t *edi = posit;
 	unsigned char *esi = (unsigned char *)font;
 	int al = znak;
 	unsigned char dl,cl,ch,dh;
-	word *ebx;
+	pixel_t *ebx;
 
 	word ax = esi[al*2]+256*esi[al*2+1];
 	if (ax == 0) goto chrend;
@@ -151,12 +147,12 @@ chr5:
 	al = *esi++;
 	if (al == 0) goto chr2;
 	if (al >= 8) goto chr3;
-	ax = charcolors[(al-1)];
-	if (ax == 0xFFFF) goto chr4;
-	if (ax & BGSWITCHBIT) {
-	    ax = avg_pixels(*ebx ,ax) & ~BGSWITCHBIT;
+	{pixel_t clr = charcolors[(al-1)];
+	if (clr == 0xFFFF) goto chr4;
+	if (clr & BGSWITCHBIT) {
+	    clr = avg_pixels(*ebx ,clr) & ~BGSWITCHBIT;
 	}
-	*ebx = ax;
+	*ebx = clr;}
 	goto chr4;
 chr3:if (al == 255) goto chrend;
 	dl = al - 6;
@@ -221,7 +217,7 @@ chrend:                 ;konec
     }
 */
   }
-void char2_32(word *posit, const word *font,char znak)
+void char2_32(pixel_t *posit, const word *font,char znak)
 //#pragma aux char2_32 parm [edi] [esi] [eax] modify [eax ebx ecx edx]
   {
 
@@ -317,15 +313,15 @@ chsend: and     eax,0ffffh
   }
 
 
-void put_picture_ex(word x,word y,const void *p, word *target_addr, size_t pitch)
+void put_picture_ex(word x,word y,const void *p, pixel_t *target_addr, size_t pitch)
 //#pragma aux put_picture parm [esi] [eax] [edi] modify [ebx ecx edx]
   {
   int32_t scr_linelen2 = pitch;
-  word *adr=target_addr+scr_linelen2*y+x;
-  const word *data=p;
-  word xs=data[0];
-  word ys=data[1];
-  word mode=data[2];
+  pixel_t *adr=target_addr+scr_linelen2*y+x;
+  const word *hdr=(const word *)p;
+  word xs=hdr[0];
+  word ys=hdr[1];
+  word mode=hdr[2];
   word xss=xs;
   word yss=ys;
 
@@ -335,23 +331,9 @@ void put_picture_ex(word x,word y,const void *p, word *target_addr, size_t pitch
   if (x+xss>=DxGetResX()) xss=DxGetResX()-x;
   if (y+yss>=DxGetResY()) yss=DxGetResY()-y;
 
-  data+=3;
-
-  if (mode==15)
+  if (mode==15 || mode==16)
     {
-    int i;
-    int j;
-
-    for (i=0;i<yss;i++,adr+=scr_linelen2,data+=(xs-xss))
-      for (j=0;j<xss;j++)
-        {
-//        adr[j]=((*data & ~0x1f)<<1) | (*data & 0x1f);
-        adr[j]=*data;
-        data++;
-        }
-    }
-  if (mode==16)
-    {
+    const pixel_t *data=(const pixel_t *)((const char *)p + 6);
     int i;
     int j;
 
@@ -364,8 +346,8 @@ void put_picture_ex(word x,word y,const void *p, word *target_addr, size_t pitch
     }
   if (mode==8 || mode==264)
     {
-    const word *table=data;
-    uint8_t *cdata=(uint8_t *)(data+(mode==264?10*256:256));
+    const pixel_t *table=(const pixel_t *)((const char *)p + 6);
+    uint8_t *cdata=(uint8_t *)(table+(mode==264?10*256:256));
     int i;
     int j;
 
@@ -379,8 +361,8 @@ void put_picture_ex(word x,word y,const void *p, word *target_addr, size_t pitch
     }
   else if (mode==512 )
     {
-    const word *table=data;
-    uint8_t *cdata=(uint8_t *)(data+256);
+    const pixel_t *table=(const pixel_t *)((const char *)p + 6);
+    uint8_t *cdata=(uint8_t *)(table+256);
     int i;
     int j;
 
@@ -388,7 +370,7 @@ void put_picture_ex(word x,word y,const void *p, word *target_addr, size_t pitch
       for (j=0;j<xss;j++)
         {
         if (*cdata)
-        adr[j]=table[*cdata]+(table[*cdata] & ~0x1F);
+        adr[j]=table[*cdata];
         cdata++;
         }
     }
@@ -400,8 +382,9 @@ void put_picture(word x,word y,const void *p) {
 void get_picture(word x,word y,word xs,word ys,void *p)
   {
   int32_t scr_linelen2 = GetScreenPitch();
-  word *adr=GetScreenAdr()+scr_linelen2*y+x;
-  word *data=p;
+  pixel_t *adr=GetScreenAdr()+scr_linelen2*y+x;
+  pixel_t *data=(pixel_t *)((char *)p + 6);
+  word *hdr=(word *)p;
   word xss=xs;
   word yss=ys;
   if (x > DxGetResX() || y > DxGetResY()) return;
@@ -409,10 +392,9 @@ void get_picture(word x,word y,word xs,word ys,void *p)
   if (x+xss>=DxGetResX()) xss=DxGetResX()-x;
   if (y+yss>=DxGetResY()) yss=DxGetResY()-y;
 
-  data[0]=xss;
-  data[1]=yss;
-  data[2]=15;
-  data+=3;
+  hdr[0]=xss;
+  hdr[1]=yss;
+  hdr[2]=15;
     {
     int i;
     int j;
@@ -426,18 +408,18 @@ void get_picture(word x,word y,word xs,word ys,void *p)
     }
   }
 
-void put_image(const word *image,word *target,int start_line,int sizex,int sizey)
+void put_image(const pixel_t *image,pixel_t *target,int start_line,int sizex,int sizey)
 //#pragma aux put_image parm [ESI][EDI][EAX][EBX][EDX] modify [ECX]
   {
     int32_t scr_linelen2 = GetScreenPitch();
-	const word *esi = image;
-	word *edi = target;
+	const word *hdr = (const word *)image;
+	pixel_t *edi = target;
 	int edx = sizey;
-	int ecx = esi[0];
-	esi = esi + 3 + start_line * ecx;
+	int ecx = hdr[0];
+	const pixel_t *esi = (const pixel_t *)((const char *)image + 6) + start_line * ecx;
 
 	while (edx) {
-		memcpy(edi,esi,ecx*2);
+		memcpy(edi,esi,ecx*sizeof(pixel_t));
 		esi += ecx;
 		edi += scr_linelen2;
 		edx--;
@@ -485,10 +467,10 @@ void put_8bit_clipped(const void *src,void *trg,int startline,int velx,int vely)
 	  if (src==NULL) return;
 	  {
 		  const word *esi = src;
-		  word *edi = trg;
-		  const word *paleta = esi+3;
+		  pixel_t *edi = trg;
+		  const pixel_t *paleta = (const pixel_t *)((const char *)src + 6);
 		  int cx = esi[0];
-		  unsigned char *imgdata = (unsigned char *)(esi + 3 + 256)+ startline * cx;
+		  unsigned char *imgdata = (unsigned char *)(paleta + 256)+ startline * cx;
 
 		  while (vely) {
 			  int i;
@@ -559,8 +541,8 @@ void put_textured_bar_(const void *src,void *trg,int xsiz,int ysiz,int xofs,int 
 	word cx = imghdr[0];
 	word cy = imghdr[1];
 	word tp = imghdr[2];
-	word *paleta = imghdr+3;
-	word *target = (word *)trg;
+	pixel_t *paleta = (pixel_t *)((char *)src + 6);
+	pixel_t *target = (pixel_t *)trg;
 	unsigned char *imgdata = (unsigned char *)(paleta+256);
 	int y;
 
@@ -655,12 +637,12 @@ ptb_skip2:
     }
   }
 */
-#define MIXTRANSP(a,b) ((((a) & 0x7BDE)+((b) & 0x7BDE))>>1)
+#define MIXTRANSP(a,b) BLEND_PIXELS(a,b)
 
 void trans_bar(int x,int y,int xs,int ys,int barva)
   {
   int32_t scr_linelen2 = GetScreenPitch();
-  word *begline;
+  pixel_t *begline;
   int x1=x;
   int y1=y;
   int x2=x+xs-1;
@@ -694,7 +676,7 @@ void trans_line_y(int x,int y,int ys,int barva)
 
 void trans_bar25(int x,int y,int xs,int ys)
   {
-  word *begline;
+  pixel_t *begline;
   int x1=x;
   int y1=y;
   int x2=x+xs-1;
@@ -723,13 +705,13 @@ void wait_retrace()
   }
 
 
-#define pic_start (2+2+2+512*5+512*5)
+#define pic_start (2+2+2+256*sizeof(pixel_t)*5+256*sizeof(pixel_t)*5)
 
-void put_picture2picture(const word *source,word *target,int xp,int yp)
+void put_picture2picture(const pixel_t *source,pixel_t *target,int xp,int yp)
 //#pragma aux put_picture2picture parm [ESI][EDI][EAX][EDX] modify [ECX]
   {
 
-   word *srchdr = (word *)source;
+   const word *srchdr = (const word *)source;
    word *trghdr = (word *)target;
    word src_cx = srchdr[0];
    word trg_cx = trghdr[0];

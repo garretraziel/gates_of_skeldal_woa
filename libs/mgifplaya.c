@@ -6,9 +6,9 @@
 #include <assert.h>
 
 void show_full_lfb12e(void *target,const void *buff, const void *paleta) {
-    uint16_t *edi = (uint16_t *)target;
+    pixel_t *edi = (pixel_t *)target;
     uint8_t *esi = (uint8_t *)buff;
-    uint16_t *ebx = (uint16_t *)paleta;
+    const pixel_t *ebx = (const pixel_t *)paleta;
     uint8_t dl = 180;
 
     do {
@@ -34,11 +34,11 @@ void show_delta_lfb12e(void *target,void *buff,void *paleta)
  {
 //  __asm
 //    {
-    uint16_t *edi = target;
+    pixel_t *edi = target;
 //        mov     edi,target
     uint8_t  *esi = buff;
 //        mov     esi,buff
-    uint16_t *ebx = paleta;
+    const pixel_t *ebx = paleta;
 //        mov     ebx,paleta
 //                        ;edi - target
 //                        ;esi - buff

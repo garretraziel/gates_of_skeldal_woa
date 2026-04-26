@@ -120,15 +120,15 @@ static __inline int rangrnd(int a, int b) {return rnd(b-a+1)+a;}
 
 #undef RGB
 #define RGB(r,g,b) RGB888(r,g,b)
-#define GET_R_COLOR(col) ((col & 0xF800)>>8)
-#define GET_G_COLOR(col) ((col & 0x07E0)>>3)
-#define GET_B_COLOR(col) ((col & 0x001F)<<3)
+#define GET_R_COLOR(col) PIXEL_RED(col)
+#define GET_G_COLOR(col) PIXEL_GREEN(col)
+#define GET_B_COLOR(col) PIXEL_BLUE(col)
 
 #define NOSHADOW(x) ((x)|BGSWITCHBIT)
 
 
 #define PICTURES ".." PATH_SEPARATOR "OBRAZKY" PATH_SEPARATOR
-#define PIC_FADE_PAL_SIZE (10*512+6)
+#define PIC_FADE_PAL_SIZE (10*256*(int)sizeof(pixel_t)+6)
 
 #define E_REFRESH  256 //udalost refresh scene
 #define E_KOUZLO_KOLO 257 //funkce kouzel kazde jedno kolo

@@ -227,9 +227,9 @@ static void draw_other_bar()
   int i;
   int32_t scr_linelen2 = GetScreenPitch();
 
-  const word *bbar=ablock(H_BOTTBAR);
-  word *screen=GetScreenAdr()+(480-102)*scr_linelen2;
-  for (i=0;i<102;i++,screen+=scr_linelen2,bbar+=scr_linelen2) memcpy(screen,bbar,scr_linelen2*2);
+  const pixel_t *bbar=ablock(H_BOTTBAR);
+  pixel_t *screen=GetScreenAdr()+(480-102)*scr_linelen2;
+  for (i=0;i<102;i++,screen+=scr_linelen2,bbar+=scr_linelen2) memcpy(screen,bbar,scr_linelen2*sizeof(pixel_t));
   //put_8bit_clipped(ablock(H_GEN_OKBUTT),378*640+520+screen,0,120,102);
   displ_button(b_disables,b_texty);
   put_picture(0,0,ablock(H_GEN_TOPBAR));

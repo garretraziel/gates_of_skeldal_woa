@@ -1249,12 +1249,14 @@ void *build_items_wearing(THUMAN *h, int32_t *s)
   if (h->vlastnosti[VLS_KOUZLA] & SPL_STONED)
   {
     int i;
-    for (i=0;i<(PIC_FADE_PAL_SIZE>>1);++i) if (i>3)
+    pixel_t *paldata = (pixel_t *)((char *)ob + 6);
+    int palcount = 10*256;
+    for (i = 0; i < palcount; i++)
     {
-      unsigned short col=ob[i];
+      pixel_t col=paldata[i];
       int bw=(GET_R_COLOR(col)+GET_G_COLOR(col)+GET_B_COLOR(col))/3;
       if (bw>255) bw=255;
-      ob[i]=RGB(bw,bw,bw);
+      paldata[i]=RGB(bw,bw,bw);
     }
   }
   else
