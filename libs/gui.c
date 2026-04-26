@@ -395,14 +395,14 @@ void property(CTL3D *ctl,const word *font,FC_TABLE *fcolor,pixel_t color)
   if (ctl!=NULL) memcpy(&o_end->border3d,ctl,sizeof(CTL3D));
   if (font!=NULL) o_end->font=font;
   if (fcolor!=NULL) memcpy(&o_end->f_color,fcolor,sizeof(FC_TABLE));
-  if (color!=0xffff) o_end->color=color;
+  if (color!=PIXEL_NODRAW) o_end->color=color;
   }
 
 FC_TABLE *flat_color(pixel_t color)
   {
   static FC_TABLE p;
 
-  p[0]=0xffff;
+  p[0]=PIXEL_NODRAW;
   p[1]=color;p[2]=color;p[3]=color;p[4]=color;p[5]=color;p[6]=color;
   return &p;
   }

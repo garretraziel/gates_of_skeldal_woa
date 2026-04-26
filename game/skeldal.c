@@ -500,7 +500,7 @@ void set_font(int font,int c1,...)
   if (c1>=0)
      if (c1 & BGSWITCHBIT)
       {
-      charcolors[0]=0xFFFF;
+      charcolors[0]=PIXEL_NODRAW;
       for (i=1;i<5;i++) charcolors[i]=c1 & ~BGSWITCHBIT;
       }
      else if (c1 & FONT_TSHADOW) {
@@ -508,11 +508,11 @@ void set_font(int font,int c1,...)
              charcolors[0]=RGB555_ALPHA(16,16,15);
          else
              charcolors[0]=BGSWITCHBIT;
-         for (i=1;i<5;i++) charcolors[i]=c1 & ~0x20;
+         for (i=1;i<5;i++) charcolors[i]=c1 & ~FONT_TSHADOW_GRAY;
      }else
       {
       charcolors[0]=0;
-      for (i=1;i<5;i++) charcolors[i]=c1 & ~0x20;
+      for (i=1;i<5;i++) charcolors[i]=c1 & ~FONT_TSHADOW_GRAY;
       }
   else if (c1==-2)
      {
@@ -893,8 +893,8 @@ char device_error(int chyba,char disk,char info)
   _STACKLOW=NULL;
   chyba,disk,info;
   curfont=&boldcz;
-  charcolors[0]=0xffff;
-  for(c=1;c<5;c++) charcolors[c]=0x7fff;
+  charcolors[0]=PIXEL_NODRAW;
+  for(c=1;c<5;c++) charcolors[c]=RGB555(31,31,31);
   memcpy(buffer_2nd,screen,screen_buffer_size);
   trans_bar(320-ERR_WINX/2,240-ERR_WINY/2,ERR_WINX,ERR_WINY,0);
   curcolor=0x7fff;

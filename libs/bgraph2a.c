@@ -149,7 +149,7 @@ chr5:
 	if (al == 0) goto chr2;
 	if (al >= 8) goto chr3;
 	{pixel_t clr = charcolors[(al-1)];
-	if (clr == 0xFFFF) goto chr4;
+	if (clr == PIXEL_NODRAW) goto chr4;
 	if (clr & BGSWITCHBIT) {
 	    clr = avg_pixels(*ebx ,clr) & ~BGSWITCHBIT;
 	}
@@ -506,17 +506,34 @@ void put_8bit_clipped(const void *src,void *trg,int startline,int velx,int vely)
 	  {
 		  const word *esi = src;
 		  pixel_t *edi = trg;
-		  const pixel_t *paleta = (const pixel_t *)((const char *)src + 6);
 		  int cx = esi[0];
-		  unsigned char *imgdata = (unsigned char *)(paleta + 256)+ startline * cx;
-
-		  while (vely) {
-			  int i;
-			  for (i = 0; i < velx; i++)
-					if (imgdata[i]) edi[i] = paleta[imgdata[i]];
-			  imgdata += cx;
-			  edi += scr_linelen2;
-			  vely--;
+		  word mode = esi[2];
+		  if (mode == 808 || mode == (808+256)) {
+			  // PCX-loaded: pixel_t palette
+			  const pixel_t *paleta = (const pixel_t *)((const char *)src + 6);
+			  unsigned char *imgdata = (unsigned char *)(paleta + (mode==(808+256)?10*256:256)) + startline * cx;
+			  while (vely) {
+				  int i;
+				  for (i = 0; i < velx; i++)
+						if (imgdata[i]) edi[i] = paleta[imgdata[i]];
+				  imgdata += cx;
+				  edi += scr_linelen2;
+				  vely--;
+			  }
+		  } else {
+			  // Raw DDL: 16-bit palette
+			  const word *raw_pal = (const word *)((const char *)src + 6);
+			  DECL_VLA(pixel_t, paleta, 256);
+			  for (int k = 0; k < 256; k++) paleta[k] = rgb555to32(raw_pal[k]);
+			  unsigned char *imgdata = (unsigned char *)(raw_pal + 256) + startline * cx;
+			  while (vely) {
+				  int i;
+				  for (i = 0; i < velx; i++)
+						if (imgdata[i]) edi[i] = paleta[imgdata[i]];
+				  imgdata += cx;
+				  edi += scr_linelen2;
+				  vely--;
+			  }
 		  }
 	  }
 }
@@ -579,24 +596,40 @@ void put_textured_bar_(const void *src,void *trg,int xsiz,int ysiz,int xofs,int 
 	word cx = imghdr[0];
 	word cy = imghdr[1];
 	word tp = imghdr[2];
-	pixel_t *paleta = (pixel_t *)((char *)src + 6);
-	pixel_t *target = (pixel_t *)trg;
-	unsigned char *imgdata = (unsigned char *)(paleta+256);
-	int y;
-
-	xofs = xofs % cx;
-
-	if (tp != 8) return;
-
-	for (y = 0; y < ysiz; y++) {
-		int yf = (yofs + y) % cy;
-		unsigned char *row = imgdata +(yf * cx);
-		int x;
-		for (x = 0; x < xsiz; x++) {
-			unsigned char c = row[(x + xofs) % cx];
-			if (c) target[x] = paleta[c];
+	pixel_t *target = (pixel_t *)trg;	if (tp == 808) {
+		// PCX-loaded: palette is already pixel_t
+		pixel_t *paleta = (pixel_t *)((char *)src + 6);
+		unsigned char *imgdata = (unsigned char *)(paleta+256);
+		int y;
+		xofs = xofs % cx;
+		for (y = 0; y < ysiz; y++) {
+			int yf = (yofs + y) % cy;
+			unsigned char *row = imgdata +(yf * cx);
+			int x;
+			for (x = 0; x < xsiz; x++) {
+				unsigned char c = row[(x + xofs) % cx];
+				if (c) target[x] = paleta[c];
+			}
+			target+=scr_linelen2;
 		}
-		target+=scr_linelen2;
+	} else if (tp == 8) {
+		// Raw DDL: palette is 16-bit, convert on the fly
+		const word *raw_pal = (const word *)((char *)src + 6);
+		DECL_VLA(pixel_t, paleta, 256);
+		for (int k = 0; k < 256; k++) paleta[k] = rgb555to32(raw_pal[k]);
+		unsigned char *imgdata = (unsigned char *)(raw_pal+256);
+		int y;
+		xofs = xofs % cx;
+		for (y = 0; y < ysiz; y++) {
+			int yf = (yofs + y) % cy;
+			unsigned char *row = imgdata +(yf * cx);
+			int x;
+			for (x = 0; x < xsiz; x++) {
+				unsigned char c = row[(x + xofs) % cx];
+				if (c) target[x] = paleta[c];
+			}
+			target+=scr_linelen2;
+		}
 	}
 }
 /*

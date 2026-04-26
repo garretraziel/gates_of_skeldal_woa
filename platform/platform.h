@@ -27,9 +27,9 @@ typedef uint32_t pixel_t;
 /// Create opaque pixel from 8-bit RGB components (0-255 each)
 #define RGB888(r,g,b) ((pixel_t)(((r) << 16) | ((g) << 8) | (b)))
 
-/// Pixel blending: fast average of two opaque pixels
+/// Pixel blending: fast average of two opaque pixels (preserves opaque, no BGSWITCHBIT)
 #define AVG_PIXEL_MASK 0x00FEFEFEu
-#define BLEND_PIXELS(px1, px2) (0xFF000000u | ((((px1) & AVG_PIXEL_MASK) + ((px2) & AVG_PIXEL_MASK)) >> 1))
+#define BLEND_PIXELS(px1, px2) ((((px1) & AVG_PIXEL_MASK) + ((px2) & AVG_PIXEL_MASK)) >> 1)
 
 /// Extract 8-bit channels from pixel_t
 #define PIXEL_RED(p)   (((p) >> 16) & 0xFF)
@@ -39,6 +39,9 @@ typedef uint32_t pixel_t;
 
 /// Test if pixel is transparent (BGSWITCHBIT convention)
 #define PIXEL_IS_TRANSPARENT(p) (((p) & BGSWITCHBIT) != 0)
+
+/// Sentinel value for "don't draw this color" in charcolors
+#define PIXEL_NODRAW 0xFFFFFFFFu
 
 /// Convert legacy 16-bit RGB555 palette entry to 32-bit pixel_t
 /// Legacy format: MSB=transparency, bits 14-10=R, 9-5=G, 4-0=B

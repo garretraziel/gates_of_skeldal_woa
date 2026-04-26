@@ -1132,12 +1132,12 @@ void draw_placed_texture(const short *txtr,int celx,int cely,int posx,int posy,i
         if (turn) {
             enemy_draw_mirror(txtr,
                     GetBuffer2nd() + x + (y + SCREEN_OFFLINE) * scr_linelen2,
-                    6 + 512 * cely + (secnd_shade ? SHADE_STEPS * 512 : 0),
+                    6 + 256 * sizeof(pixel_t) * cely + (secnd_shade ? SHADE_STEPS * 256 * sizeof(pixel_t) : 0),
                     last_scale, y, (clipr << 16) + clipl);
         }else {
             enemy_draw(txtr,
                     GetBuffer2nd() + x + (y + SCREEN_OFFLINE) * scr_linelen2,
-                    6 + 512 * cely + (secnd_shade ? SHADE_STEPS * 512 : 0),
+                    6 + 256 * sizeof(pixel_t) * cely + (secnd_shade ? SHADE_STEPS * 256 * sizeof(pixel_t) : 0),
                     last_scale, y, (clipr << 16) + clipl);
         }
     }
