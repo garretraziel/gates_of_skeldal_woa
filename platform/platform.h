@@ -5,7 +5,51 @@
 #ifndef _SKELDAL_PLATFORM_HEADER_
 #define _SKELDAL_PLATFORM_HEADER_
 
-#define BGSWITCHBIT 0x8000
+/// pixel_t is the runtime pixel type (32-bit ARGB)
+typedef uint32_t pixel_t;
+
+/// BGSWITCHBIT marks a pixel as transparent (bit set = transparent)
+/// In ARGB: alpha=0x00 is transparent, alpha=0xFF is opaque
+/// Legacy convention: BGSWITCHBIT set = transparent, so we use MSB
+#define BGSWITCHBIT 0x80000000u
+
+/// Convert 5-bit channel to 8-bit (full range: 31 → 255)
+#define EXPAND5TO8(v) (((v) << 3) | ((v) >> 2))
+
+/// Create opaque pixel from 5-bit RGB components (0-31 each)
+#define RGB555(r,g,b) ((pixel_t)( \
+    (EXPAND5TO8(r) << 16) | (EXPAND5TO8(g) << 8) | EXPAND5TO8(b) ))
+
+/// Create transparent pixel from 5-bit RGB components
+#define RGB555_ALPHA(r,g,b) ((pixel_t)( \
+    (EXPAND5TO8(r) << 16) | (EXPAND5TO8(g) << 8) | EXPAND5TO8(b) | BGSWITCHBIT ))
+
+/// Create opaque pixel from 8-bit RGB components (0-255 each)
+#define RGB888(r,g,b) ((pixel_t)(((r) << 16) | ((g) << 8) | (b)))
+
+/// Pixel blending: fast average of two opaque pixels
+#define AVG_PIXEL_MASK 0x00FEFEFEu
+#define BLEND_PIXELS(px1, px2) (0xFF000000u | ((((px1) & AVG_PIXEL_MASK) + ((px2) & AVG_PIXEL_MASK)) >> 1))
+
+/// Extract 8-bit channels from pixel_t
+#define PIXEL_RED(p)   (((p) >> 16) & 0xFF)
+#define PIXEL_GREEN(p) (((p) >> 8) & 0xFF)
+#define PIXEL_BLUE(p)  ((p) & 0xFF)
+#define PIXEL_ALPHA(p) (((p) >> 24) & 0xFF)
+
+/// Test if pixel is transparent (BGSWITCHBIT convention)
+#define PIXEL_IS_TRANSPARENT(p) (((p) & BGSWITCHBIT) != 0)
+
+/// Convert legacy 16-bit RGB555 palette entry to 32-bit pixel_t
+/// Legacy format: MSB=transparency, bits 14-10=R, 9-5=G, 4-0=B
+static inline pixel_t rgb555to32(uint16_t c) {
+    uint32_t r = (c >> 10) & 0x1F;
+    uint32_t g = (c >> 5) & 0x1F;
+    uint32_t b = c & 0x1F;
+    pixel_t pixel = (EXPAND5TO8(r) << 16) | (EXPAND5TO8(g) << 8) | EXPAND5TO8(b);
+    if (c & 0x8000) pixel |= BGSWITCHBIT;
+    return pixel;
+}
 
 #ifdef _MSC_VER
 #pragma warning(disable: 4244)
@@ -48,13 +92,6 @@ extern "C"
 extern int timerspeed_val;
 
 uint32_t _bios_keybrd(int mode);
-
-
-#define RGB888(r,g,b) ((unsigned short)((((r)<<7)&0x7C00) | (((g)<<2) & 0x3E0) | ((b)>>3)))
-#define RGB555(r,g,b) (((unsigned short)(((r)<<10) | ((g)<<5) | (b))) & ~BGSWITCHBIT)
-#define RGB555_ALPHA(r,g,b) (((unsigned short)(((r)<<10) | ((g)<<5) | (b))) | BGSWITCHBIT)
-#define AVG_PIXEL_MASK (0x7BDE)
-#define BLEND_PIXELS(px1, px2) ((((px1) & AVG_PIXEL_MASK) + ((px2) & AVG_PIXEL_MASK)) >> 1)
 
 
 
@@ -131,9 +168,17 @@ int list_files(const char *directory, int type, LIST_FILES_CALLBACK cb, void *ct
 
 #include "sdl/BGraph2.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void init_joystick(const INI_CONFIG_SECTION *section);
 char is_joystick_used();
 char is_joystick_enabled();
+
+#ifdef __cplusplus
+}
+#endif
 
 #define WM_RELOADMAP (WM_APP+215)
 #define E_RELOADMAP 40

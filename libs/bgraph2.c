@@ -7,10 +7,11 @@
 #include "memman.h"
 #include "unaligned.h"
 
-word *screen;
-word curcolor,charcolors[7] = {RGB555_ALPHA(0,0,0),RGB555(12,31,12),RGB555(12,30,12),RGB555(12,28,12),RGB555(12,20,12),0x0000,0x0000};
+pixel_t *screen;
+pixel_t curcolor,charcolors[7] = {RGB555_ALPHA(0,0,0),RGB555(12,31,12),RGB555(12,30,12),RGB555(12,28,12),RGB555(12,20,12),0x0000,0x0000};
 const word *curfont;
-word *writepos,writeposx;
+pixel_t *writepos;
+word writeposx;
 byte fontdsize=0;
 void (*showview)(word,word,word,word);
 char line480=0;
@@ -524,8 +525,9 @@ void hide_ms_cursor()
 void redraw_ms_cursor_on_screen(void) {
 #ifdef FORCE_SOFTWARE_CURSOR
     if (mssavebuffer) {
-      integer xs=read_i16_unaligned(mssavebuffer);
-      integer ys=read_i16_unaligned((const integer *)mssavebuffer+1);
+      const pixel_t *buf = (const pixel_t *)mssavebuffer;
+      integer xs=(integer)buf[0];
+      integer ys=(integer)buf[1];
       showview(mscuroldx,mscuroldy,xs,ys);
     }
 #endif
@@ -540,7 +542,7 @@ void *register_ms_cursor(const void *cursor)
   xs=read_i16_unaligned(mscursor);
   ys=read_i16_unaligned((const integer *)mscursor+1);
   if (mssavebuffer!=NULL) free(mssavebuffer);
-  mssavebuffer=malloc(xs*ys*2+10);//5 bajtu pro strejcka prihodu
+  mssavebuffer=malloc((xs*ys+3)*sizeof(pixel_t)+10);
   return mssavebuffer;
   }
 
@@ -621,7 +623,7 @@ void rectangle(int x1,int y1,int x2,int y2,int color)
 
 
 void put_pixel(int x, int y, int c) {
-    word *addr = getadr32(x, y);
+    pixel_t *addr = getadr32(x, y);
     *addr = c;
 }
 
@@ -776,22 +778,20 @@ void draw_rounded_rectangle(int x, int y, int xs, int ys, int radius,
     }
 }
 
-void greyscale_rectangle_ex(int x, int y, int xs, int ys, uint16_t *screen_address, size_t line_width) {
+void greyscale_rectangle_ex(int x, int y, int xs, int ys, pixel_t *screen_address, size_t line_width) {
   for (int j = y; j < y + ys; j++) {
     for (int i = x; i < x + xs; i++) {
-      uint16_t *pixel = screen_address + j * line_width + i;
-      uint16_t color = *pixel;
+      pixel_t *pixel = screen_address + j * line_width + i;
+      pixel_t color = *pixel;
 
-      // Extract RGB components (5 bits each)
-      int r = (color >> 10) & 0x1F;
-      int g = (color >> 5) & 0x1F;
-      int b = color & 0x1F;
+      int r = PIXEL_RED(color);
+      int g = PIXEL_GREEN(color);
+      int b = PIXEL_BLUE(color);
 
-      // Calculate greyscale value (average of RGB)
       int grey = (r + g + b) / 3;
 
-      // Reconstruct the pixel with the MSB intact
-      *pixel = (color & 0x8000) | (grey << 10) | (grey << 5) | grey;
+      // Reconstruct the pixel preserving alpha/transparency
+      *pixel = (color & 0xFF000000u) | (grey << 16) | (grey << 8) | grey;
     }
   }
 }

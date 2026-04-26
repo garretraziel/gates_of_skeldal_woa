@@ -227,17 +227,10 @@ static void crash_sdl_exception() {
 
 // Seznam akceptovatelných formátů odpovídajících RGBA8888 (v různém pořadí)
 constexpr Uint32 acceptable_formats[] = {
-    SDL_PIXELFORMAT_RGBA8888,
     SDL_PIXELFORMAT_ARGB8888,
+    SDL_PIXELFORMAT_RGBA8888,
     SDL_PIXELFORMAT_BGRA8888,
     SDL_PIXELFORMAT_ABGR8888,
-
-    SDL_PIXELFORMAT_RGBA4444,
-    SDL_PIXELFORMAT_ARGB4444,
-    SDL_PIXELFORMAT_BGRA4444,
-    SDL_PIXELFORMAT_ABGR4444,
-
-    SDL_PIXELFORMAT_ARGB2101010,
 };
 
 constexpr bool is_acceptable_format(Uint32 format) {
@@ -521,28 +514,10 @@ void SDLContext::update_texture_with_conversion(SDL_Texture *texture, const SDL_
             convert_bitmap<SDL_PIXELFORMAT_ABGR8888>(pixels, r, pitch);break;
         case SDL_PIXELFORMAT_ARGB8888:
             convert_bitmap<SDL_PIXELFORMAT_ARGB8888>(pixels, r, pitch);break;
-        case SDL_PIXELFORMAT_ARGB2101010:
-            convert_bitmap<SDL_PIXELFORMAT_ARGB2101010>(pixels, r, pitch);break;
         case SDL_PIXELFORMAT_RGBA8888:
             convert_bitmap<SDL_PIXELFORMAT_RGBA8888>(pixels, r, pitch);break;
         case SDL_PIXELFORMAT_BGRA8888:
             convert_bitmap<SDL_PIXELFORMAT_BGRA8888>(pixels, r, pitch);break;
-        case SDL_PIXELFORMAT_ABGR4444:
-            convert_bitmap<SDL_PIXELFORMAT_ABGR4444>(pixels, r, pitch);break;
-        case SDL_PIXELFORMAT_ARGB4444:
-            convert_bitmap<SDL_PIXELFORMAT_ARGB4444>(pixels, r, pitch);break;
-        case SDL_PIXELFORMAT_BGRA4444:
-            convert_bitmap<SDL_PIXELFORMAT_BGRA4444>(pixels, r, pitch);break;
-        case SDL_PIXELFORMAT_RGBA4444:
-            convert_bitmap<SDL_PIXELFORMAT_RGBA4444>(pixels, r, pitch);break;
-        case SDL_PIXELFORMAT_ABGR1555:
-            convert_bitmap<SDL_PIXELFORMAT_ABGR1555>(pixels, r, pitch);break;
-        case SDL_PIXELFORMAT_ARGB1555:
-            convert_bitmap<SDL_PIXELFORMAT_ARGB1555>(pixels, r, pitch);break;
-        case SDL_PIXELFORMAT_RGBA5551:
-            convert_bitmap<SDL_PIXELFORMAT_RGBA5551>(pixels, r, pitch);break;
-        case SDL_PIXELFORMAT_BGRA5551:
-            convert_bitmap<SDL_PIXELFORMAT_BGRA5551>(pixels, r, pitch);break;
         default:
             return;
     }
