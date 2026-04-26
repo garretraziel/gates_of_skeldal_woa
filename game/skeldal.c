@@ -490,6 +490,7 @@ void set_font(int font,int c1,...)
   va_list lst;
   va_start(lst, c1);
   int i;
+  unsigned int uc1 = (unsigned int)c1;
 
   if (last_font!=-1 && last_font!=font)
      {
@@ -497,22 +498,22 @@ void set_font(int font,int c1,...)
      alock(font);
      }
   curfont=ablock(font);
-  if (c1>=0)
-     if (c1 & BGSWITCHBIT)
+  if (c1>=0 || (uc1 & BGSWITCHBIT))
+     if (uc1 & BGSWITCHBIT)
       {
       charcolors[0]=PIXEL_NODRAW;
-      for (i=1;i<5;i++) charcolors[i]=c1 & ~BGSWITCHBIT;
+      for (i=1;i<5;i++) charcolors[i]=uc1 & ~BGSWITCHBIT;
       }
-     else if (c1 & FONT_TSHADOW) {
-         if ((c1 & FONT_TSHADOW_GRAY) == FONT_TSHADOW_GRAY)
+     else if (uc1 & FONT_TSHADOW) {
+         if ((uc1 & FONT_TSHADOW_GRAY) == FONT_TSHADOW_GRAY)
              charcolors[0]=RGB555_ALPHA(16,16,15);
          else
              charcolors[0]=BGSWITCHBIT;
-         for (i=1;i<5;i++) charcolors[i]=c1 & ~FONT_TSHADOW_GRAY;
+         for (i=1;i<5;i++) charcolors[i]=uc1 & ~FONT_TSHADOW_GRAY;
      }else
       {
       charcolors[0]=0;
-      for (i=1;i<5;i++) charcolors[i]=c1 & ~FONT_TSHADOW_GRAY;
+      for (i=1;i<5;i++) charcolors[i]=uc1 & ~FONT_TSHADOW_GRAY;
       }
   else if (c1==-2)
      {
