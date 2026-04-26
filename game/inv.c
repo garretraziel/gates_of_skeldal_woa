@@ -98,7 +98,7 @@ static TSHOP_ALL_STATE shop_all_state;
 #define INV_LEVEL_COL1 (NOSHADOW(RGB555(0,0,15)))
 #define INV_LEVEL_COL2 (RGB555(31,24,0))
 
-unsigned short butt_plus[7]={0x0,(RGB555(25,23,16)),(RGB555(18,17,14)),(RGB555(10,10,5)),(RGB555(31,27,14))};
+pixel_t butt_plus[7]={0x0,(RGB555(25,23,16)),(RGB555(18,17,14)),(RGB555(10,10,5)),(RGB555(31,27,14))};
 
 #define PO_XS 194
 #define PO_YS 340

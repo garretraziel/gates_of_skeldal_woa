@@ -33,7 +33,7 @@
 
 static char shadow_enabled=1;
 
-word color_topbar[7]={0,RGB555(22,14,4),RGB555(24,16,6),RGB555(25,17,7)};
+pixel_t color_topbar[7]={0,RGB555(22,14,4),RGB555(24,16,6),RGB555(25,17,7)};
 
 int input_txtr=H_LOADTXTR;
 

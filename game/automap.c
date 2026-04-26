@@ -38,14 +38,14 @@
 
 #define AUTOMAP_FONT_COLOR (RGB555(0,0,0)|FONT_TSHADOW_GRAY)
 
-word stairs_colors[7]=
+pixel_t stairs_colors[7]=
   {AUTOMAP_LINE1,
    RGB555(14,12,11),
    RGB555(15,14,12),
    RGB555(16,15,12),
    RGB555(17,16,13)};
 
-word arrow_colors[7]=
+pixel_t arrow_colors[7]=
   {
   AUTOMAP_LINE1,
   AUTOMAP_FORE
@@ -507,8 +507,8 @@ static void zobraz_herni_cas(void)
   }
 
 
-extern word color_butt_on[];
-extern word color_butt_off[];
+extern pixel_t color_butt_on[];
+extern pixel_t color_butt_off[];
 
 static void displ_button(char disable,char **text)
   {
