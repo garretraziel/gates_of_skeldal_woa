@@ -233,7 +233,7 @@ void psani_poznamek_event(EVENT_MSG *msg,void **data)
      if (save_pic==NULL)
         {
         schovej_mysku();
-        save_pic=getmem(640*20*2+6);
+        save_pic=getmem(640*20*sizeof(pixel_t)+6*sizeof(pixel_t));
         get_picture(0,y,640,20,save_pic);
         position(x,y);outtext(text);outtext("_");
         showview(0,0,640,480);

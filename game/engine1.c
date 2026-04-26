@@ -724,7 +724,7 @@ void show_cel2(int celx,int cely,const void *stena,int xofs,int yofs,char rev, i
   zoom.palette=(pixel_t *)((byte *)stena+6+256*sizeof(pixel_t)*(cely)+(secnd_shade?SHADE_STEPS*256*sizeof(pixel_t):0));
   zoom.ycount=realsy+1;
   zoom.xmax=realsx;
-  zoom.line_len=scr_linelen2*2;
+  zoom.line_len=scr_linelen2*sizeof(pixel_t);
   if (alpha) {
       if (rev==2) sikma_zprava_alpha(); else sikma_zleva_alpha();
   } else {
