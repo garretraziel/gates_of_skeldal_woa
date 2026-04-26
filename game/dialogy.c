@@ -154,7 +154,7 @@ static void animace_kouzla(MGIF_HEADER_T *_,int act,const void *data,int csize)
      case MGIF_LZW:
      case MGIF_COPY:small_anm_buff(p,data,paleta);break;
      case MGIF_DELTA:small_anm_delta(p,data,paleta);break;
-     case MGIF_PAL:{const word *src16=(const word *)data;int i;for(i=0;i<256;i++)paleta[i]=rgb555to32(src16[i]);}break;
+     case MGIF_PAL:{const word *src16=(const word *)data;int i;for(i=0;i<256;i++)paleta[i]=rgb555to32(src16[i]);paleta[0]|=BGSWITCHBIT;}break;
      }
   }
 
