@@ -489,7 +489,7 @@ static void *extractByMask(const short *image, const short *mask_data, int mask)
     short xs = image[0];
     short mxs = mask_data[0];
     short mys = mask_data[1];
-    const char *mdata = (const char *)mask_data+sizeof(short)*3+512;
+    const char *mdata = (const char *)mask_data+sizeof(short)*3+256*sizeof(pixel_t);
     for (short y = 0; y < mys; ++y) {
         for (short x = 0; x < mxs; ++x) {
             if (mdata[y*mxs+x] == mask) {

@@ -1477,7 +1477,7 @@ void fill_rune(char *d,int i)
   {
   int x,y;char *dd;
 
-  dd=((char *)d)+6+512;
+  dd=((char *)d)+6+256*sizeof(pixel_t);
         for(y=378;y<480;y++)
            {
            pixel_t *z;
@@ -1678,7 +1678,7 @@ char runes_mask(int id,int xa,int ya,int xr,int yr)
 
   id;ya;xa;
   d=ablock(H_RUNEMASK);
-  c=((char *)d)+6+512+xr+yr*d[0];
+  c=((char *)d)+6+256*sizeof(pixel_t)+xr+yr*d[0];
   cc=*c-6;
   if (*c) {
      if (*c<6 && ms_last_event.event_type & 0x2) {
@@ -2014,7 +2014,7 @@ char mask_click_help(int id,int xa,int ya,int xr,int yr)
 
   id;xa;ya;
   mask=(word *)ablock(H_BATTLE_MASK);
-  c=(char *)mask+6+512;
+  c=(char *)mask+6+256*sizeof(pixel_t);
   c+=yr*mask[0]+xr;
   d=*c;
   if (d) pgm_help=d;
@@ -2169,7 +2169,7 @@ char mask_click(int id,int xa,int ya,int xr,int yr)
 
   id;xa;ya;
   mask=(word *)ablock(H_BATTLE_MASK);
-  c=(char *)mask+6+512;
+  c=(char *)mask+6+256*sizeof(pixel_t);
   c+=yr*mask[0]+xr;
   d=*c;
   if (d) {
