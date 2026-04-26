@@ -1223,7 +1223,7 @@ static void trace_for_bgr(int dir)
 			{
 			if (bgr_distance==-1)
 				{
-				word *w=GetScreenAdr();int i=scr_linelen2*480;
+				pixel_t *w=GetScreenAdr();int i=scr_linelen2*480;
 				do {if (*w>=NOSHADOW(0)) *w=back_color;w++;} while(--i);
 				}
 			zneplatnit_block(H_BGR_BUFF);
