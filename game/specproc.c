@@ -96,12 +96,12 @@ static void otoc_obraz1(word *source,word *target)
      }
   }
 
-void swap_screen(word *_p,word *_q)
+void swap_screen(pixel_t *_p,pixel_t *_q)
   {
   int i;
   for (i = 0; i < 115200; i++)
     {
-    word tmp = *_q;
+    pixel_t tmp = *_q;
     *_q = *_p;
     *_p = tmp;
     _p++;
@@ -110,7 +110,7 @@ void swap_screen(word *_p,word *_q)
   }
 //  #pragma aux swap_screen parm [esi][edi]=\ modify [ecx eax]
 
-static void otoc_obraz2(word *source)
+static void otoc_obraz2(pixel_t *source)
   {
   swap_screen(source,source+scr_linelen2*360-2);
   }
@@ -239,7 +239,7 @@ static void OtocObrazPodleMatice(float mx[3][2], word *picture)
 
 static void OtaceniObrazu()
   {
-  word *picture=(word *)malloc(640*360*2+16);
+  pixel_t *picture=(pixel_t *)malloc(640*360*sizeof(pixel_t)+16*sizeof(pixel_t));
   float mx[3][2];
 
   int maxtime=500;

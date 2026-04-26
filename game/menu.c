@@ -583,7 +583,7 @@ void titles(va_list args)
         //showview(l,60,r-l+1,360);
         showview(0,60,639,360);
         buff+=scr_linelen2*359;
-        memcpy(buff,buff+scr_linelen2*skip,2*40*scr_linelen2);
+        memcpy(buff,buff+scr_linelen2*skip,sizeof(pixel_t)*40*scr_linelen2);
         showview(0,0,640,40);
         task_wait_event(E_TIMER);
         counter+=skip;
