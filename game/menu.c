@@ -69,7 +69,7 @@ static char promacknuti(int id,int xa,int ya,int xr,int yr)
   word *w;
 
   z=ablock(H_MENU_MASK);w=(word *)z;
-  z+=6+512;
+  z+=6+256*sizeof(pixel_t);
   z+=xr+yr*w[0];
   vymacknout(id,xa,ya,xr,yr);
   if (*z!=0) cur_dir[*z-1]=SELECT;
