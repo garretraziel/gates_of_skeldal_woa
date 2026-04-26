@@ -290,7 +290,7 @@ static void zobraz_perlu(void)
   perla=ablock(H_GEN_PERLA);
   if (pod_perlou==NULL)
      {
-     pod_perlou=getmem(perla[0]*perla[1]*2+6);
+     pod_perlou=getmem(perla[0]*perla[1]*sizeof(pixel_t)+6*sizeof(pixel_t));
      }
   vypocet_perly(cur_angle,perla[0],perla[1],&x,&y);
   xs=perla[0];ys=perla[1];

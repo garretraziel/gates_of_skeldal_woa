@@ -481,7 +481,7 @@ void show_cel_l(int celx,int cely,void *stena)
   if (x3d->used)
      {
   zoom.startptr=buffer_2nd+(yd->drawline+x3d->xpos);
-  zoom.texture=(void *)((byte *)stena+256*2*5+2*2+2+x3d->txtoffset);
+  zoom.texture=(void *)((byte *)stena+SHADE_PAL+2*2+2+x3d->txtoffset);
   zoom.texture_line=read_u16_unaligned(stena);
   zoom.xtable=&x3d->zoom_table;
   zoom.ytable=&yd->zoom_table;
@@ -504,7 +504,7 @@ void show_cel_r(int celx,int cely,void *stena)
   if (x3d->used)
      {
   zoom.startptr=buffer_2nd+(yd->drawline+639-x3d->xpos);
-  zoom.texture=(void *)((byte *)stena+256*2*5+2*2+2+x3d->txtoffset);
+  zoom.texture=(void *)((byte *)stena+SHADE_PAL+2*2+2+x3d->txtoffset);
   zoom.texture_line=read_u16_unaligned(stena);
   zoom.xtable=&x3d->zoom_table;
   zoom.ytable=&yd->zoom_table;
@@ -528,7 +528,7 @@ void show_cel2_l(int celx,int cely,void *stena)
   if (x3d->used)
      {
   zoom.startptr=buffer_2nd+(yd->drawline+x3d->xpos);
-  zoom.texture=(void *)((byte *)stena+256*2*5+2*2+2+x3d->txtoffset);
+  zoom.texture=(void *)((byte *)stena+SHADE_PAL+2*2+2+x3d->txtoffset);
   zoom.texture_line=read_u16_unaligned(stena);
   zoom.xtable=&x3d->zoom_table;
   zoom.ytable=&yd->zoom_table;
@@ -551,7 +551,7 @@ void show_cel2_r(int celx,int cely,void *stena)
   if (x3d->used)
      {
   zoom.startptr=buffer_2nd+(yd->drawline+x3d->xpos2);
-  zoom.texture=(void *)((byte *)stena+256*2*5+2*2+2);
+  zoom.texture=(void *)((byte *)stena+SHADE_PAL+2*2+2);
   zoom.texture_line=read_u16_unaligned(stena);
   zoom.xtable=&x3d->zoom_table;
   zoom.ytable=&yd->zoom_table;
