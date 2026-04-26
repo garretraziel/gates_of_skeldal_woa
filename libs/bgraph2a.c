@@ -4,6 +4,7 @@
 #include "unaligned.h"
 
 #include <string.h>
+#include <malloc.h>
 
 
 void bar32(int x1,int y1, int x2, int y2)
@@ -333,21 +334,24 @@ void put_picture_ex(word x,word y,const void *p, pixel_t *target_addr, size_t pi
 
   if (mode==15 || mode==16)
     {
-    const pixel_t *data=(const pixel_t *)((const char *)p + 6);
+    const word *data=(const word *)((const char *)p + 6);
     int i;
     int j;
 
     for (i=0;i<yss;i++,adr+=scr_linelen2,data+=(xs-xss))
       for (j=0;j<xss;j++)
         {
-        adr[j]=*data;
+        adr[j]=rgb555to32(*data);
         data++;
         }
     }
   if (mode==8 || mode==264)
     {
-    const pixel_t *table=(const pixel_t *)((const char *)p + 6);
-    uint8_t *cdata=(uint8_t *)(table+(mode==264?10*256:256));
+    const word *raw_table=(const word *)((const char *)p + 6);
+    int palette_entries = (mode==264 ? 10*256 : 256);
+    DECL_VLA(pixel_t, table, palette_entries);
+    for (int k = 0; k < palette_entries; k++) table[k] = rgb555to32(raw_table[k]);
+    uint8_t *cdata=(uint8_t *)(raw_table + palette_entries);
     int i;
     int j;
 
@@ -361,8 +365,10 @@ void put_picture_ex(word x,word y,const void *p, pixel_t *target_addr, size_t pi
     }
   else if (mode==512 )
     {
-    const pixel_t *table=(const pixel_t *)((const char *)p + 6);
-    uint8_t *cdata=(uint8_t *)(table+256);
+    const word *raw_table=(const word *)((const char *)p + 6);
+    DECL_VLA(pixel_t, table, 256);
+    for (int k = 0; k < 256; k++) table[k] = rgb555to32(raw_table[k]);
+    uint8_t *cdata=(uint8_t *)(raw_table+256);
     int i;
     int j;
 
@@ -416,10 +422,10 @@ void put_image(const pixel_t *image,pixel_t *target,int start_line,int sizex,int
 	pixel_t *edi = target;
 	int edx = sizey;
 	int ecx = hdr[0];
-	const pixel_t *esi = (const pixel_t *)((const char *)image + 6) + start_line * ecx;
+	const word *esi = (const word *)((const char *)image + 6) + start_line * ecx;
 
 	while (edx) {
-		memcpy(edi,esi,ecx*sizeof(pixel_t));
+		for (int i = 0; i < ecx; i++) edi[i] = rgb555to32(esi[i]);
 		esi += ecx;
 		edi += scr_linelen2;
 		edx--;
