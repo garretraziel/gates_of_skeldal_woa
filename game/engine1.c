@@ -651,7 +651,7 @@ void show_cel(int celx,int cely,const void *stena,int xofs,int yofs,char rev, in
   zoom.palette=(pixel_t *)((byte *)stena+6+256*sizeof(pixel_t)*(cely)+(secnd_shade?SHADE_STEPS*256*sizeof(pixel_t):0));
   zoom.ycount=realsy+1;
   zoom.xmax=realsx;
-  zoom.line_len=2*scr_linelen2;
+  zoom.line_len=2*scr_linelen2*sizeof(pixel_t);
   if (alpha) {
       if (rev) sikma_zprava_alpha(); else sikma_zleva_alpha();
   } else {
@@ -1063,7 +1063,7 @@ void map_pos(int celx,int cely,int posx,int posy,int posz,int *x,int *y)
   zoom.palette=(pixel_t *)((char *)pic+6+cely*256*sizeof(pixel_t)+(secnd_shade?SHADE_STEPS*256*sizeof(pixel_t):0));
   zoom.ycount=ysr;
   zoom.xmax=xmax;
-  zoom.line_len=1280;
+  zoom.line_len=640*sizeof(pixel_t)*2;
   sikma_zleva();
   }
 */
@@ -1190,7 +1190,7 @@ void draw_placed_texture(const short *txtr,int celx,int cely,int posx,int posy,i
   zoom.palette=(pixel_t *)((char *)txtr+6+cely*256*sizeof(pixel_t)+(secnd_shade?SHADE_STEPS*256*sizeof(pixel_t):0));
   zoom.ycount=ysr;
   zoom.xmax=xmax;
-  zoom.line_len=1280;
+  zoom.line_len=640*sizeof(pixel_t)*2;
   if (turn) sikma_zprava();else sikma_zleva();
 
   }
