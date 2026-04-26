@@ -1,18 +1,27 @@
 # Visual Improvements Plan — Gates of Skeldal
 
 ## Status
-- ✅ **Improvement 3: Pixel-art scalers** — DONE (Scale2x/Scale3x, F11 toggle)
-- 🔄 **Improvement 1: 32-bit color** — IN PROGRESS (branch: `visual/32bit-color`)
-- ⬜ **Improvement 4: Post-processing** — TODO
-- ⬜ **Improvement 2: AI-upscaled textures** — TODO
+- ✅ **Improvement 3: Pixel-art scalers** — DONE (Scale2x/Scale3x, F11 toggle) — merged to `main`
+- ✅ **Improvement 1: 32-bit color** — DONE (branch: `visual/32bit-color`, NOT merged yet)
+- ⬜ **Improvement 4: Post-processing** — TODO (requires 32-bit color)
+- ⬜ **Improvement 2: AI-upscaled textures** — TODO (requires 32-bit color)
 
-## Architecture Context
+## Architecture Context (after 32-bit upgrade)
 
-- **Framebuffer**: 640×480, 16-bit RGB555 (`word*` buffers)
+- **Framebuffer**: 640×480, **32-bit ARGB** (`pixel_t*` buffers, `pixel_t = uint32_t`)
 - **3D viewport**: 640×360 (bottom 120px is UI)
-- **Textures**: 8-bit indexed with per-surface 16-bit palettes
+- **Textures**: 8-bit indexed with per-surface **32-bit palettes** (converted from 24-bit PCX on load)
+- **Asset format**: DDL files still contain 16-bit RGB555 palettes — converted on render via `rgb555to32()`
 - **Renderer**: Software lookup-table perspective, not raycasting
-- **Output**: Software → SDL streaming texture → SDL_RenderCopy → window
+- **Output**: Software → SDL streaming texture (ARGB8888) → SDL_RenderCopy → window
+- **Transparency**: `BGSWITCHBIT (0x80000000)` = transparent, `0x00RRGGBB` = opaque
+- **Key macros**: `RGB555()`, `RGB888()`, `PIXEL_IS_TRANSPARENT()`, `BLEND_PIXELS()`, `PIXEL_NODRAW`
+- **Mode values in image headers**: 
+  - `8` = raw DDL 8-bit indexed (16-bit palette at offset 6)
+  - `15/16` = raw DDL hicolor (16-bit pixel data)
+  - `32` = PCX-loaded hicolor (pixel_t data)
+  - `808` = PCX-loaded 8-bit indexed (pixel_t palette at offset 6)
+  - `808+256` = PCX-loaded 8-bit with shade palettes (pixel_t)
 - **Key files**: `libs/engine1.c`, `libs/bgraph2.c`, `game/builder.c`, `platform/sdl/sdl_context.cpp`, `platform/sdl/BGraph2.cpp`
 
 ## Improvement 1: 32-bit Color (RGB8888)
