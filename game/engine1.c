@@ -1056,11 +1056,11 @@ void map_pos(int celx,int cely,int posx,int posy,int posz,int *x,int *y)
      }
   if (y-ysr<0) ysr=y;
   zoom.startptr=GetBuffer2nd()+y*640+x+SCREEN_OFFSET;
-  zoom.texture=(short *)((char *)(&pic[3+SHADE_PAL])+xofs);
+  zoom.texture=(short *)((char *)pic+6+SHADE_PAL+xofs);
   zoom.texture_line=xs;
   zoom.xtable=(int32_t *)&zoomtab_x;
   zoom.ytable=(short *)&zoomtab_y;
-  zoom.palette=(pixel_t *)&pic[3+cely*256+(secnd_shade?SHADE_STEPS*256:0)];
+  zoom.palette=(pixel_t *)((char *)pic+6+cely*256*sizeof(pixel_t)+(secnd_shade?SHADE_STEPS*256*sizeof(pixel_t):0));
   zoom.ycount=ysr;
   zoom.xmax=xmax;
   zoom.line_len=1280;
@@ -1183,11 +1183,11 @@ void draw_placed_texture(const short *txtr,int celx,int cely,int posx,int posy,i
   if (ysr<=0) return;
   if (turn) zoom.startptr=GetBuffer2nd()+y*640+(VIEW_SIZE_X-x)+SCREEN_OFFSET;
   else zoom.startptr=GetBuffer2nd()+y*640+x+SCREEN_OFFSET;
-  zoom.texture=(short *)((char *)(&txtr[3+SHADE_PAL])+xofs);
+  zoom.texture=(short *)((char *)txtr+6+SHADE_PAL+xofs);
   zoom.texture_line=xs;
   zoom.xtable=(int32_t *)&zoomtab_x;
   zoom.ytable=(short *)&zoomtab_y;
-  zoom.palette=(pixel_t *)&txtr[3+cely*256+(secnd_shade?SHADE_STEPS*256:0)];
+  zoom.palette=(pixel_t *)((char *)txtr+6+cely*256*sizeof(pixel_t)+(secnd_shade?SHADE_STEPS*256*sizeof(pixel_t):0));
   zoom.ycount=ysr;
   zoom.xmax=xmax;
   zoom.line_len=1280;
@@ -1248,14 +1248,14 @@ void draw_enemy(DRW_ENEMY *drw)
 
   if (drw->stoned)
   {
-    unsigned short *p=(unsigned short *)alloca(SHADE_PAL);
+    pixel_t *p=(pixel_t *)alloca(SHADE_PAL);
     int i;
-    for (i=0;i<SHADE_PAL/2;i++)
+    for (i=0;i<SHADE_PAL/sizeof(pixel_t);i++)
     {
-      unsigned short col=(unsigned)drw->palette[0][i];
-      int bw=(GET_R_COLOR(col)+GET_G_COLOR(col)+GET_B_COLOR(col))/3;
+      pixel_t col=drw->palette[0][i];
+      int bw=(PIXEL_RED(col)+PIXEL_GREEN(col)+PIXEL_BLUE(col))/3;
       if (bw>255) bw=255;
-      p[i]=RGB(bw,bw,bw);
+      p[i]=RGB888(bw,bw,bw);
     }
     drw->palette=(palette_t *)p;
   }
