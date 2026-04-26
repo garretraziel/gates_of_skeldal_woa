@@ -39,8 +39,8 @@ int input_txtr=H_LOADTXTR;
 
 void create_frame(int x,int y,int xs,int ys,char clear)
    {
-   word *line;
-   word *col;
+   pixel_t *line;
+   pixel_t *col;
    int i;
    int32_t scr_linelen2 = GetScreenPitch();
 
