@@ -113,7 +113,7 @@ typedef struct t_point
 typedef T_POINT t_points[VIEW3D_X+1][2][VIEW3D_Z+1];
 extern word *background;
 extern t_points viewport_geometry;
-extern word *buffer_2nd;
+extern pixel_t *buffer_2nd;
 extern char show_names;
 extern char show_lives;
 extern char secnd_shade;

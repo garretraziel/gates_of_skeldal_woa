@@ -129,26 +129,35 @@ static const void *nahraj_rozdilovy_pcx(const void *pp, int32_t *s, int h)
   {
   char *org,*pos;
   char *vysl;
-  word *size,*paltab;
-  word *hicolor,*p;
+  word *size;
+  const word *paltab;
   const void *origin;
   int siz;
 
   load_pcx((char *)pp,*s,A_8BIT,&vysl);
   size=(word *)vysl;
   siz=size[0]*size[1];
-  p=hicolor=getmem(siz*2+12);
-  *p++=size[0];
-  *p++=size[1];
-  *p++=16;
+  // Allocate 32-bit pixel buffer: 6-byte word header + pixel_t data
+  int alloc_size = 6 + siz*sizeof(pixel_t);
+  char *result = getmem(alloc_size);
+  word *hdr = (word *)result;
+  hdr[0]=size[0];
+  hdr[1]=size[1];
+  hdr[2]=32;
+  pixel_t *pixels = (pixel_t *)(result + 6);
+
   origin=ablock(H_ANIM_ORIGN);
-  org=(char *)origin+6+512;
-  pos=(char *)vysl+6+512;
-  paltab=(word *)vysl+3;
-  rozdily((uint8_t *)org,(uint8_t *)pos,hicolor+3,paltab,siz);
+  org=(char *)origin+6+256*sizeof(pixel_t);
+  pos=(char *)vysl+6+256*sizeof(pixel_t);
+  const pixel_t *paltab32=(const pixel_t *)((char *)vysl+6);
+  // Build difference image: XOR indexed pixels, look up in palette (already 32-bit)
+  for (int i = 0; i < siz; i++) {
+      uint8_t al = ((uint8_t *)pos)[i] ^ ((uint8_t *)org)[i];
+      pixels[i] = paltab32[al];
+  }
   free(vysl);
-  *s=siz*2+12;
-  return hicolor;
+  *s=alloc_size;
+  return result;
   }
 
 
@@ -206,7 +215,7 @@ jp2: inc  ebx
     }
   }
 */
-static void zobraz_podle_masky_asm(char barva, uint16_t *scr, const uint16_t *data, const uint8_t *maska, int xs, int ys, int scr_linelen) {
+static void zobraz_podle_masky_asm(char barva, pixel_t *scr, const pixel_t *data, const uint8_t *maska, int xs, int ys, int scr_linelen) {
     int width = xs;
 
     for (int y = 0; y < ys; y++) {
@@ -215,9 +224,9 @@ static void zobraz_podle_masky_asm(char barva, uint16_t *scr, const uint16_t *da
                 scr[x] = data[x];
             }
         }
-        scr += scr_linelen;  // Přeskoč na další řádek obrazovky
-        maska += width;      // Přeskoč masku
-        data += width;       // Přeskoč zdrojová data
+        scr += scr_linelen;
+        maska += width;
+        data += width;
     }
 }
 
@@ -234,7 +243,7 @@ static void zobraz_podle_masky(char barva,char anim)
   data=ablock(H_MENU_ANIM+anim);
   xs=data[0];
   ys=data[1];
-  zobraz_podle_masky_asm(barva,obr,data+3,(uint8_t *)maska+6+512,xs,ys,scr_linelen2);
+  zobraz_podle_masky_asm(barva,obr,(const pixel_t *)((const char *)data+6),(uint8_t *)maska+6+256*sizeof(pixel_t),xs,ys,scr_linelen2);
   aunlock(H_MENU_MASK);
   }
 
