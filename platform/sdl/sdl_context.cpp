@@ -408,6 +408,9 @@ int SDLContext::init_window(const VideoConfig &config, const char *title, std::f
         crash_sdl_exception();
         return -1;
     }
+    // Cleanup: null out visible/hidden pointers before destroying textures
+    _visible_texture = nullptr;
+    _hidden_texture = nullptr;
     _pixel_scaler = PixelScaleType::none;
     _shadow_buffer_ready = false;
     _scaled_texture.reset();
@@ -422,6 +425,7 @@ int SDLContext::init_window(const VideoConfig &config, const char *title, std::f
     if (e) {
         std::rethrow_exception(e);
     }
+    if (exit_code < 0) exit_code = 0;
     return exit_code;
 }
 
