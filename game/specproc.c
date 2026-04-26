@@ -216,13 +216,13 @@ static void show_liane(THE_TIMER *t)
 
 
 
-static void OtocObrazPodleMatice(float mx[3][2], word *picture)
+static void OtocObrazPodleMatice(float mx[3][2], pixel_t *picture)
   {
     int32_t scr_linelen2 = GetScreenPitch();
 
-  word *trg=GetScreenAdr()+17*scr_linelen2;
+  pixel_t *trg=GetScreenAdr()+17*scr_linelen2;
   int x,y;
-  picture+=6;
+  picture = (pixel_t *)((word *)picture + 3);
   for (y=0;y<360;y++,trg+=scr_linelen2)
 	for (x=0;x<640;x++)
 	  {

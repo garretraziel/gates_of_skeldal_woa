@@ -1159,17 +1159,17 @@ static char set_blind(void) {
 
 extern char folow_mode;
 
-static void zobraz_lodku(const word *lodka, word *screen, int size)
+static void zobraz_lodku(const void *lodka_data, pixel_t *screen, int size)
   {
     int32_t scr_linelen2 = GetScreenPitch();
 
-  lodka+=3;
+  const pixel_t *lodka = (const pixel_t *)((const word *)lodka_data + 3);
   int x;
   while (size)
 	{
 	for (x=0;x<640 && size;x++)
 	  {
-	  if (*lodka!=0x8000) screen[x]=*lodka;
+	  if (!PIXEL_IS_TRANSPARENT(*lodka)) screen[x]=*lodka;
 	  lodka++;
 	  size--;
 	  }
