@@ -123,6 +123,7 @@ void put_textured_bar_(const void *src,void *trg,int xsiz,int ysiz,int xofs,int 
 void put_textured_bar(const void *src,int x,int y,int xs,int ys,int xofs,int yofs);
 void trans_bar(int x,int y,int xs,int ys,int barva);
 //#pragma aux trans_bar parm [EDI][ESI][EDX][ECX][EBX] modify [EAX];
+void trans_bar_alpha(int x,int y,int xs,int ys,int barva,int alpha);
 void trans_bar25(int x,int y,int xs,int ys);
 //#pragma aux trans_bar25 parm [EDI][ESI][EDX][ECX] modify [EAX EBX];
 void trans_line_x(int x,int y,int xs,int barva);

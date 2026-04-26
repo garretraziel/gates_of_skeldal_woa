@@ -1,8 +1,11 @@
 #include "BGraph2.h"
 #include "../platform.h"
+#include "../config.h"
 
 #include "sdl_context.h"
 #include "global_context.h"
+
+#include <cstdlib>
 
 
 static std::unique_ptr<pixel_t[]> screen_buffer;
@@ -51,6 +54,16 @@ int game_display_init(const INI_CONFIG_SECTION *display_section,
     else cfg.pixel_scaler = PixelScaleType::none;
 
     cfg.cursor_size = ini_get_int(display_section, "cursor_size", 100)*0.01f;
+
+    // Post-processing settings
+    {
+        const char *v;
+        v = ini_get_string(display_section, "gamma", "1.0");
+        cfg.post_process.gamma = (float)atof(v);
+        v = ini_get_string(display_section, "brightness", "1.0");
+        cfg.post_process.brightness = (float)atof(v);
+        cfg.post_process.color_temperature = (int)ini_get_int(display_section, "color_temperature", 0);
+    }
 
     screen_pitch = 640;
 

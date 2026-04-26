@@ -290,6 +290,7 @@ int SDLContext::init_window(const VideoConfig &config, const char *title, std::f
     // Shadow buffer allocated lazily on first use
     // _shadow_buffer.resize(640 * 480, 0);
 
+    _post_lut.init(config.post_process);
     std::exception_ptr e;
     std::string_view stage;
     std::string rname;
@@ -485,9 +486,11 @@ void SDLContext::convert_bitmap(const void *pixels, SDL_Rect rect, int pitch) {
 
     const pixel_t *src = static_cast<const pixel_t*>(pixels);
     auto trg = converted_pixels.data();
+    const bool apply_lut = !_post_lut.is_identity();
     for (int y = 0; y < rect.h; ++y) {
         for (int x = 0; x < rect.w; ++x) {
             pixel_t pixel = src[x];
+            if (apply_lut) pixel = _post_lut.apply(pixel);
             Uint32 r = (pixel >> 16) & 0xFF;
             Uint32 g = (pixel >> 8) & 0xFF;
             Uint32 b = pixel & 0xFF;

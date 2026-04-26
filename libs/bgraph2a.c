@@ -745,18 +745,34 @@ void trans_line_y(int x,int y,int ys,int barva)
   trans_bar(x,y,1,ys,barva);
   }
 
-void trans_bar25(int x,int y,int xs,int ys)
+/// Blend pixel with color at given alpha (0=transparent, 255=opaque)
+static inline pixel_t blend_alpha(pixel_t bg, pixel_t fg, unsigned int alpha) {
+    unsigned int inv = 255 - alpha;
+    unsigned int rb_bg = bg & 0x00FF00FFu;
+    unsigned int g_bg  = bg & 0x0000FF00u;
+    unsigned int rb_fg = fg & 0x00FF00FFu;
+    unsigned int g_fg  = fg & 0x0000FF00u;
+    unsigned int rb = (rb_bg * inv + rb_fg * alpha + 0x00800080u) >> 8;
+    unsigned int g  = (g_bg  * inv + g_fg  * alpha + 0x00000080u) >> 8;
+    return (rb & 0x00FF00FFu) | (g & 0x0000FF00u);
+}
+
+void trans_bar_alpha(int x,int y,int xs,int ys,int barva,int alpha)
   {
+  int32_t scr_linelen2 = GetScreenPitch();
   pixel_t *begline;
   int x1=x;
   int y1=y;
   int x2=x+xs-1;
   int y2=y+ys-1;
   int i,j;
+  unsigned int a;
 
-  int32_t scr_linelen2 = GetScreenPitch();
   int mx =  DxGetResX() - 1;
   int my =  DxGetResY() - 1;
+
+  if (alpha <= 0) return;
+  if (alpha >= 255) a = 255; else a = (unsigned int)alpha;
 
   if (x1>x2) swap_int(x1,x2);
   if (y1>y2) swap_int(y1,y2);
@@ -766,8 +782,13 @@ void trans_bar25(int x,int y,int xs,int ys)
   if (y2>my) y2=my;
   for (i=y1,begline=GetScreenAdr()+scr_linelen2*i;i<=y2;i++,begline+=scr_linelen2)
     {
-    for (j=x1;j<=x2;j++) begline[j]=MIXTRANSP(begline[j],MIXTRANSP(begline[j],0));
+    for (j=x1;j<=x2;j++) begline[j]=blend_alpha(begline[j],(pixel_t)barva,a);
     }
+  }
+
+void trans_bar25(int x,int y,int xs,int ys)
+  {
+  trans_bar_alpha(x, y, xs, ys, 0, 64);
   }
 
 void wait_retrace()

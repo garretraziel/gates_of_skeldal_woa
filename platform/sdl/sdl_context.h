@@ -10,6 +10,7 @@
 #include <functional>
 #include "unique_value.h"
 #include "pixel_scaler.h"
+#include "post_process.h"
 
 #include <queue>
 
@@ -39,6 +40,7 @@ public:
         int aspect_x;
         int aspect_y;
         float cursor_size;
+        PostProcessConfig post_process;
     };
 
     struct AudioConfig {
@@ -251,6 +253,8 @@ protected:
     std::vector<pixel_t> _scaled_buffer;
     std::unique_ptr<SDL_Texture, SDL_Deleter> _scaled_texture;
     bool _shadow_buffer_ready = false;
+
+    PostProcessLUT _post_lut;
 
 
     bool _fullscreen_mode = false;

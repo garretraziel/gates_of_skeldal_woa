@@ -3,7 +3,7 @@
 ## Status
 - ✅ **Improvement 3: Pixel-art scalers** — DONE (Scale2x/Scale3x, F11 toggle) — merged to `main`
 - ✅ **Improvement 1: 32-bit color** — DONE (branch: `visual/32bit-color`, NOT merged yet)
-- ⬜ **Improvement 4: Post-processing** — TODO (requires 32-bit color)
+- 🔧 **Improvement 4: Post-processing** — IN PROGRESS (quick wins: gamma/brightness/color_temperature LUT, smooth transparency)
 - ⬜ **Improvement 2: AI-upscaled textures** — TODO (requires 32-bit color)
 
 ## Architecture Context (after 32-bit upgrade)
@@ -29,9 +29,10 @@
 With the framebuffer now in 32-bit ARGB (8 bits per channel), the following enhancements are now possible:
 
 ### Quick Wins (low effort, immediate visual impact)
-- **Gamma / contrast adjustment** — apply a simple power curve to all pixels before SDL upload. Makes the game look more vibrant on modern displays.
-- **Color temperature / warmth** — shift the color balance (e.g., warmer for dungeons, cooler for ice levels). Just multiply R/G/B channels by different factors.
-- **Smooth transparency** — `trans_bar` currently does 50% blend only. With 8-bit precision, we can do any opacity (10%, 25%, 75%, etc.) for better UI overlays.
+- ✅ **Gamma / contrast adjustment** — per-channel LUT applied during SDL pixel format conversion. INI: `gamma=1.0` (0.5–2.0)
+- ✅ **Brightness adjustment** — folded into the same LUT. INI: `brightness=1.0` (0.5–2.0)
+- ✅ **Color temperature / warmth** — shifts R/B balance, folded into same LUT. INI: `color_temperature=0` (-100 to +100)
+- ✅ **Smooth transparency** — `trans_bar_alpha(x, y, xs, ys, color, alpha)` with per-channel alpha blending (0–255). `trans_bar25` now uses proper 25% opacity.
 - **Better distance fog** — palette shading already uses 256 shade levels instead of 32. Fog transitions are smoother, especially noticeable in long corridors.
 
 ### Medium Effort
