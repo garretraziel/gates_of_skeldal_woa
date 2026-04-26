@@ -119,7 +119,7 @@ extern char show_lives;
 extern char secnd_shade;
 extern char show_mob_info;
 
-typedef short palette_t[256];
+typedef pixel_t palette_t[256];
 
 typedef struct drw_enemy_struct
   {
