@@ -551,7 +551,7 @@ void global_map_point(EVENT_MSG *msg,void **_)
               {
               xs=text_width(fly_text)+4;
               ys=text_height(fly_text)+4;
-              fly_background=NewArr(word,xs*ys*2+6);
+              fly_background=getmem(xs*ys*sizeof(pixel_t)+6);
               }
            else
               {

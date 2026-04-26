@@ -68,7 +68,7 @@ static char sn_nums[SAVE_POSTS];
 static char sn_nams[SAVE_POSTS][32];
 static char sn_rods[SAVE_POSTS];
 
-static word *back_pic;
+static void *back_pic;
 static char back_pic_enable=0;
 
 static char showed=0;
@@ -1393,14 +1393,18 @@ void do_dialog()
 static void create_back_pic()
   {
   int skpx=4,skpy=5,xp,yp;
-  word *p,*s=GetScreenAdr()+SCREEN_OFFSET,*s2;
+  pixel_t *s=GetScreenAdr()+SCREEN_OFFSET,*s2;
+  pixel_t *p;
+  word *hdr;
   int32_t scr_linelen2 = GetScreenPitch();
 
   schovej_mysku();
-  p=back_pic=NewArr(word,3+340*200);
-  *p++=340;
-  *p++=200;
-  *p++=A_16BIT;
+  back_pic=getmem(6+340*200*sizeof(pixel_t));
+  hdr=(word *)back_pic;
+  hdr[0]=340;
+  hdr[1]=200;
+  hdr[2]=15;
+  p=(pixel_t *)((char *)back_pic+6);
   for(yp=0;yp<200;yp++)
     {
     s2=s;

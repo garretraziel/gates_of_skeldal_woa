@@ -119,7 +119,7 @@ char running_anm=0;
 char hlubina_level=0;
 char dead_food = 0; //cheat - likvidační kouzlu
 
-word *anim_render_buffer;
+pixel_t *anim_render_buffer;
 
 short teleport_target=0; //cil teleportace
 
@@ -165,7 +165,7 @@ unsigned char twins;
 
 static short rand_value;
 
-static word paleta[256];
+static pixel_t paleta[256];
 
 void show_full_lfb12e(void *target,const void *buff,const void *paleta);
 //#pragma aux show_full_lfb12e parm[edi][esi][ebx] modify [eax ecx]
@@ -184,7 +184,7 @@ static void animace_kouzla(MGIF_HEADER_T *_,int act,const void *data, int ssize)
      case MGIF_LZW:
      case MGIF_COPY:show_full_lfb12e(anim_render_buffer,data,paleta);break;
      case MGIF_DELTA:show_delta_lfb12e(anim_render_buffer,data,paleta);break;
-     case MGIF_PAL:memcpy(paleta,data,sizeof(paleta));paleta[0]|=BGSWITCHBIT;break;
+     case MGIF_PAL:{const word *src16=(const word *)data;int i;for(i=0;i<256;i++)paleta[i]=rgb555to32(src16[i]);}break;
      }
   }
 
@@ -227,7 +227,7 @@ static void play_anim(va_list args) //tasked animation
 //#pragma aux play_anim parm []
   {
   int block=va_arg(args,int);
-#define ANIM_SIZE (320*180*2)
+#define ANIM_SIZE (320*180*(int)sizeof(pixel_t))
   const void *anm;
   int32_t *l,c;
 
@@ -241,7 +241,7 @@ static void play_anim(va_list args) //tasked animation
   mgif_install_proc(animace_kouzla);
   running_anm=1;
   l=(void *)anim_render_buffer;
-  c=ANIM_SIZE/4;do *l++=0x80008000; while (--c);
+  c=ANIM_SIZE/sizeof(pixel_t);do *l++=BGSWITCHBIT; while (--c);
   alock(block);
   anm=open_mgif(ablock(block));
   c=0;

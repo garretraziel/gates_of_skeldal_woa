@@ -1480,11 +1480,11 @@ void fill_rune(char *d,int i)
   dd=((char *)d)+6+512;
         for(y=378;y<480;y++)
            {
-           word *z;
+           pixel_t *z;
            int32_t scr_linelen2 = GetScreenPitch();
            z=GetScreenAdr()+y*scr_linelen2;
            for(x=520;x<640;x++)
-              if (*dd++==i) z[x]=z[x]-((z[x] & RGB555(28,28,28))>>2);
+              if (*dd++==i) z[x]=z[x]-((z[x] & 0x00FCFCFC)>>2);
            }
 
   }
@@ -1511,7 +1511,7 @@ void display_rune_bar(THE_TIMER *_)
        else if (!get_rune_enable(&postavy[select_player],(sel_zivel*7+i)*3)) fill_rune((char *)ablock(H_RUNEMASK),i+6);
      if (sel_zivel) trans_bar(520,378,sel_zivel*24,22,0);
      if (sel_zivel!=4)trans_bar(544+sel_zivel*24,378,96-sel_zivel*24,22,0);
-     runebar=getmem(120*102*2+6);
+     runebar=getmem(120*102*sizeof(pixel_t)+6);
      get_picture(520,378,120,102,runebar);
      }
   ukaz_mysku();

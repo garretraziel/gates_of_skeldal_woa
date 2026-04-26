@@ -226,7 +226,7 @@ static void zobraz_podle_masky(char barva,char anim)
   const char *maska;
   const word *data;
   int32_t scr_linelen2 = GetScreenPitch();
-  word *obr=GetScreenAdr()+300*scr_linelen2+220;
+  pixel_t *obr=GetScreenAdr()+300*scr_linelen2+220;
   word xs,ys;
 
   alock(H_MENU_MASK);
@@ -496,11 +496,11 @@ static int insert_next_line(int ztrata)
   return ll;
   }
 
-static void scan_lines(word *buffer,int start,int poc)
+static void scan_lines(pixel_t *buffer,int start,int poc)
   {
   int first, last,i,pocet=poc;
   int32_t scr_linelen2 = GetScreenPitch();
-  word *buf;
+  pixel_t *buf;
   while (pocet--)
      {
      buf=buffer+start*scr_linelen2;
@@ -543,7 +543,7 @@ void titles(va_list args)
   const char *textname=va_arg(args,const char *);
 
   const void *picture;
-  word *scr,*buff;
+  pixel_t *scr,*buff;
   int counter,newc;
   int lcounter=1;
   char end=0;

@@ -1639,7 +1639,7 @@ void correct_level(void);
 extern char running_anm;
 extern short teleport_target;
 extern char hlubina_level;
-extern word *anim_render_buffer;
+extern pixel_t *anim_render_buffer;
 extern char spell_cast; //0=neni rezim vyberu kouzla;
 
 #define isdemon(p) ((p)->stare_vls[VLS_KOUZLA] & SPL_DEMON)

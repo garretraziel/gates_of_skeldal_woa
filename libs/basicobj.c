@@ -22,15 +22,16 @@
 
 //FC_TABLE f_bila={0xffff,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000};
 
-void highlight(CTL3D *c,word color)
+void highlight(CTL3D *c,pixel_t color)
   {
-  c->light=color<<1;
-  if (c->light & 0x0020) {c->light&=~RGB555(0,0,31);c->light|=RGB555(0,0,31);}
-  if (c->light & 0x0400) {c->light&=~RGB555(0,31,0);c->light|=RGB555(0,31,0);}
-  if (c->light & 0x8000) {c->light&=~RGB555(31,0,0);c->light|=RGB555(31,0,0);}
-  c->shadow=color;
-  c->shadow&=RGB555(30,30,31);
-  c->shadow>>=1;
+  int r = PIXEL_RED(color);
+  int g = PIXEL_GREEN(color);
+  int b = PIXEL_BLUE(color);
+  int lr = r * 2; if (lr > 255) lr = 255;
+  int lg = g * 2; if (lg > 255) lg = 255;
+  int lb = b * 2; if (lb > 255) lb = 255;
+  c->light = RGB888(lr, lg, lb);
+  c->shadow = RGB888(r >> 1, g >> 1, b >> 1);
   }
 
 

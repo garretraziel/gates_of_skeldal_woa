@@ -424,7 +424,7 @@ void type_text_v2(va_list args)
   char *text;
   uint8_t pos,len;
   char wait_loop=1,ok=0,edit=0;
-  short *back_pic;
+  void *back_pic;
   int i;
 
   task_sleep();
@@ -435,7 +435,7 @@ void type_text_v2(va_list args)
   for(i=0;i<255;i++) text[i]=i+1;
   text[i]=0;ys=text_height(text)+5;
   strcpy(text,text_buffer);
-  back_pic=getmem(xs*ys*2+6);
+  back_pic=getmem(xs*ys*sizeof(pixel_t)+6);
   get_picture(x,y,xs,ys,back_pic);
   pos=strlen(text);
   len=pos;
@@ -954,7 +954,7 @@ static void skeldal_checkbox_draw(int x1,int y1,int x2,int y2,OBJREC *o)
   obr=ablock(H_CHECKBOX);
   if (o->userptr==NULL)
      {
-     o->userptr=NewArr(word,obr[0]*obr[0]+3);
+     o->userptr=getmem(obr[0]*obr[0]*sizeof(pixel_t)+6);
      obr=ablock(H_CHECKBOX);
      get_picture(x1,y1,obr[0],obr[0],o->userptr);
      }
@@ -1041,7 +1041,7 @@ static void setup_button_draw(int x1,int y1,int x2,int y2,OBJREC *o)
   bb=ablock(H_SETUPOK);
   pic=z[1];if (pic==NULL)
      {
-     pic=NewArr(word,bb[0]*bb[1]+3);
+     pic=getmem(bb[0]*bb[1]*sizeof(pixel_t)+6);
      bb=ablock(H_SETUPOK);
      get_picture(x1,y1,bb[0],bb[1],pic);
      }
@@ -1129,7 +1129,7 @@ static void skeldal_soupak_draw (int x1,int y1,int x2,int y2,OBJREC *o)
   back=z->bgpic;
   if (back==NULL)
      {
-     back=NewArr(word,(x2-x1+1)*(y2-y1+1)+3);
+     back=getmem((x2-x1+1)*(y2-y1+1)*sizeof(pixel_t)+6);
      get_picture(x1,y1,(x2-x1+1),(y2-y1+1),back);
      z->bgpic=back;
      pic=ablock(H_SOUPAK);
@@ -1671,7 +1671,7 @@ void show_jrc_logo(char *filename)
   char *pcx;word *pcxw;
   char bnk=1;
   int xp,yp,i;
-  word palette[256],*palw;
+  pixel_t palette[256],*palw;
   int cntr,cdiff,cpalf,ccc;
 
   change_music(NULL);
@@ -1682,9 +1682,9 @@ void show_jrc_logo(char *filename)
   pcxw=(word *)pcx;
   xp=pcxw[0];
   yp=pcxw[1];
-  palw=pcxw+3;
-  memcpy(palette,palw,256*sizeof(word));
-  memset(palw,0,256*sizeof(word));
+  palw=(pixel_t *)((char *)pcx+6);
+  memcpy(palette,palw,256*sizeof(pixel_t));
+  memset(palw,0,256*sizeof(pixel_t));
   xp/=2;yp/=2;xp=320-xp;yp=240-yp;
   cntr=get_timer_value();ccc=0;
   do
@@ -1696,10 +1696,14 @@ void show_jrc_logo(char *filename)
       if (cpalf<32)
         for (i=0;i<256;i++)
         {
-        int r=(cpalf<<11),g=(cpalf<<6),b=cpalf,k;
-        k=palette[i] & 0xF800;if (k>r) palw[i]=r;else palw[i]=k;
-        k=palette[i] & 0x7e0;if (k>g) palw[i]|=g;else palw[i]|=k;
-        k=palette[i] & 0x1f;if (k>b) palw[i]|=b;else palw[i]|=k;
+        int maxval=cpalf*255/31;
+        int r=PIXEL_RED(palette[i]);
+        int g=PIXEL_GREEN(palette[i]);
+        int b=PIXEL_BLUE(palette[i]);
+        if (r>maxval) r=maxval;
+        if (g>maxval) g=maxval;
+        if (b>maxval) b=maxval;
+        palw[i]=RGB888(r,g,b);
         }
       }
     else if (ccc!=cdiff)
@@ -1708,14 +1712,14 @@ void show_jrc_logo(char *filename)
       if (cpalf<32)
         for (i=0;i<256;i++)
         {
-        int r,g,b,k=32-cpalf;
-
-        b=palette[i];g=b>>5;b&=0x1f;r=g>>6;g&=0x1f;
-        b-=k;r-=k;g-=k;
-        if (b<0) b=0;
+        int sub=(32-cpalf)*255/31;
+        int r=PIXEL_RED(palette[i])-sub;
+        int g=PIXEL_GREEN(palette[i])-sub;
+        int b=PIXEL_BLUE(palette[i])-sub;
         if (r<0) r=0;
         if (g<0) g=0;
-        palw[i]=b | (r<<11) | (g<<6);
+        if (b<0) b=0;
+        palw[i]=RGB888(r,g,b);
         }
       }
         put_picture(xp, yp, pcx);

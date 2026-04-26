@@ -1242,7 +1242,7 @@ static void redraw_story_bar(int pos)
   if (force_save) x=STORY_X+274;else x=STORY_X;
   if (back_texture==NULL)
      {
-     back_texture=getmem(STORY_XS*STORY_YS*2+6);
+     back_texture=getmem(STORY_XS*STORY_YS*sizeof(pixel_t)+6);
      get_picture(x,STORY_Y+SCREEN_OFFLINE,STORY_XS,STORY_YS,back_texture);
      }
   else
