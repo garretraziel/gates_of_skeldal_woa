@@ -24,7 +24,35 @@
   - `808+256` = PCX-loaded 8-bit with shade palettes (pixel_t)
 - **Key files**: `libs/engine1.c`, `libs/bgraph2.c`, `game/builder.c`, `platform/sdl/sdl_context.cpp`, `platform/sdl/BGraph2.cpp`
 
-## Improvement 1: 32-bit Color (RGB8888)
+## New Possibilities Enabled by 32-bit Color
+
+With the framebuffer now in 32-bit ARGB (8 bits per channel), the following enhancements are now possible:
+
+### Quick Wins (low effort, immediate visual impact)
+- **Gamma / contrast adjustment** — apply a simple power curve to all pixels before SDL upload. Makes the game look more vibrant on modern displays.
+- **Color temperature / warmth** — shift the color balance (e.g., warmer for dungeons, cooler for ice levels). Just multiply R/G/B channels by different factors.
+- **Smooth transparency** — `trans_bar` currently does 50% blend only. With 8-bit precision, we can do any opacity (10%, 25%, 75%, etc.) for better UI overlays.
+- **Better distance fog** — palette shading already uses 256 shade levels instead of 32. Fog transitions are smoother, especially noticeable in long corridors.
+
+### Medium Effort
+- **Bloom / glow effect** — extract pixels above a brightness threshold, Gaussian blur them, and add back. Makes torches, magic effects, and bright surfaces glow.
+- **Vignette** — darken the screen edges with a smooth radial gradient. Adds cinematic atmosphere.
+- **Color grading via LUT** — apply a 3D color lookup table to transform the entire palette. Can simulate film looks (warm vintage, cold horror, etc.).
+- **Per-pixel ambient occlusion approximation** — darken pixels near edges/corners based on local contrast.
+
+### Larger Scope
+- **AI-upscaled texture packs** — extract 8-bit textures from DDL, upscale offline with ESRGAN/Real-ESRGAN, reload as higher-res pixel_t data. With pixel_t palettes, the rendering pipeline already supports direct 32-bit color output.
+- **True alpha blending for UI** — use the alpha channel (currently only used for transparency flag) for smooth semi-transparent UI panels over the 3D viewport.
+- **HDR-like rendering** — accumulate lighting in higher precision (the 8-bit channels give much more headroom than the old 5-bit ones), then tone-map to display range.
+- **Dynamic palette effects** — modify palette entries in real-time for effects like pulsing lights, poison tinting, low-health red flash, etc. Now with 16 million colors instead of 32K.
+
+### Implementation Notes
+- Best hook point for post-processing: in `sdl_context.cpp` between `_shadow_buffer` update and `SDL_UpdateTexture` call
+- The pixel scaler (Scale2x/Scale3x) should run AFTER post-processing
+- Post-processing should be optional (INI-configurable) with zero overhead when disabled
+- Color grading LUT can be precomputed at startup and applied per-pixel very efficiently
+
+## Improvement 1: 32-bit Color (RGB8888) — COMPLETED
 
 **Branch**: `visual/32bit-color`
 **Goal**: Eliminate 16-bit color banding by upgrading internal rendering to 32-bit RGBA.
