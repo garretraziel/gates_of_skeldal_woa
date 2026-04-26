@@ -137,7 +137,7 @@ int load_pcx(const char *pcx,int32_t fsize,int conv_type,char **buffer, ... )
   ptr4=*buffer;
   write_u16_unaligned(ptr4, xsize); ptr4 += 2;
   write_u16_unaligned(ptr4, ysize); ptr4 += 2;
-  write_u16_unaligned(ptr4, conv_type); ptr4 += 2;
+  write_u16_unaligned(ptr4, conv_type == A_16BIT ? 32 : conv_type); ptr4 += 2;
   pcx+=sizeof(pcxdata);ptr3=pcx;
   if (conv_type==A_NORMAL_PAL)
      {

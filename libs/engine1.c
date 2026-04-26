@@ -146,7 +146,7 @@ void fcdraw(void *source,void *target, void *table);
 void *p,*p2,*pozadi,*podlaha,*strop,*sit;int i;
 void (*zooming)(void *source,int32_t target,void *xlat,int32_t xysize);
 void (*turn)(int32_t lbuf,void *src1,void *src2,int size1);
-word *buffer_2nd;
+pixel_t *buffer_2nd;
 #ifdef _M_ARM64
 __declspec(align(4))
 #endif
