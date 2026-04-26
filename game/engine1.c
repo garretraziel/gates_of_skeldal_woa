@@ -1060,7 +1060,7 @@ void map_pos(int celx,int cely,int posx,int posy,int posz,int *x,int *y)
   zoom.texture_line=xs;
   zoom.xtable=(int32_t *)&zoomtab_x;
   zoom.ytable=(short *)&zoomtab_y;
-  zoom.palette=(word *)&pic[3+cely*256+(secnd_shade?SHADE_STEPS*256:0)];
+  zoom.palette=(pixel_t *)&pic[3+cely*256+(secnd_shade?SHADE_STEPS*256:0)];
   zoom.ycount=ysr;
   zoom.xmax=xmax;
   zoom.line_len=1280;
@@ -1096,7 +1096,7 @@ void draw_item(int celx,int cely,int posx,int posy,const short *txtr,int index)
 
 void put_textured_bar(const void *src,int x,int y,int xs,int ys,int xofs,int yofs)
   {
-  word *pos;
+  pixel_t *pos;
   const word *xy;
   int32_t scr_linelen2 = GetScreenPitch();
 
@@ -1187,7 +1187,7 @@ void draw_placed_texture(const short *txtr,int celx,int cely,int posx,int posy,i
   zoom.texture_line=xs;
   zoom.xtable=(int32_t *)&zoomtab_x;
   zoom.ytable=(short *)&zoomtab_y;
-  zoom.palette=(word *)&txtr[3+cely*256+(secnd_shade?SHADE_STEPS*256:0)];
+  zoom.palette=(pixel_t *)&txtr[3+cely*256+(secnd_shade?SHADE_STEPS*256:0)];
   zoom.ycount=ysr;
   zoom.xmax=xmax;
   zoom.line_len=1280;

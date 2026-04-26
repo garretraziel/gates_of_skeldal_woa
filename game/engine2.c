@@ -126,15 +126,15 @@ void klicovani_anm(void *target,void *source,char mirror)
 //#pragma aux klicovani_anm parm [edi][esi][eax] modify [ecx edx ebx]
 {
     int32_t scr_linelen2 = GetScreenPitch();
-	word *t = (word *)target;
-	word *s = (word *)source;
+	pixel_t *t = (pixel_t *)target;
+	pixel_t *s = (pixel_t *)source;
 	if (mirror) {
 		unsigned int l = 180;
 		while (l > 0) {
 			unsigned int c = 640;
 			while (c > 0) {
-				word p = *s++;
-				if ((p & 0x8000 ) == 0) {
+				pixel_t p = *s++;
+				if (!PIXEL_IS_TRANSPARENT(p)) {
 					--c;
 					t[c] = p;
 					t[c+scr_linelen2] = p;
@@ -154,8 +154,8 @@ void klicovani_anm(void *target,void *source,char mirror)
 		while (l > 0) {
 			unsigned int c = 320;
 			while (c > 0) {
-				word p = *s++;
-				if ((p & 0x8000 ) == 0) {
+				pixel_t p = *s++;
+				if (!PIXEL_IS_TRANSPARENT(p)) {
 					t[0] = p;
 					t[scr_linelen2] = p;
 					++t;
@@ -369,9 +369,9 @@ void scroll_and_copy(const void *pic,void *slide, void *scr, int _size,int shift
 //#pragma aux scroll_and_copy parm[esi][ebx][edi][ecx][edx][eax]
 {
     int32_t scr_linelen2 = GetScreenPitch();
-	word *srcpc = (word *)pic;
-	word *trg = (word *)scr;
-	word *sld = (word *)slide;
+	pixel_t *srcpc = (pixel_t *)pic;
+	pixel_t *trg = (pixel_t *)scr;
+	pixel_t *sld = (pixel_t *)slide;
 	int shiftofs = shift*scr_linelen2;
 	int lc = _size;
 	int *lnfo = (int *)lineinfo;
@@ -383,8 +383,8 @@ void scroll_and_copy(const void *pic,void *slide, void *scr, int _size,int shift
 		int x;
 		for (x = left; x <= right; x++) {
 
-			word c = sld[x] = sld[x+shiftofs];
-			if (c & BGSWITCHBIT) {
+			pixel_t c = sld[x] = sld[x+shiftofs];
+			if (PIXEL_IS_TRANSPARENT(c)) {
 				trg[x] = srcpc[x];
 			} else {
 				trg[x] = c;
