@@ -137,7 +137,7 @@ static int glob_y;
 
 static int last_pgf;
 
-static const word *paleta;
+static pixel_t paleta[256];
 static int32_t loc_anim_render_buffer;
 static short task_num=-1;
 
@@ -148,13 +148,13 @@ void small_anm_delta(void *target,const void *buff,const void *paleta);
 
 static void animace_kouzla(MGIF_HEADER_T *_,int act,const void *data,int csize)
   {
-  word *p=GetScreenAdr()+loc_anim_render_buffer;
+  pixel_t *p=GetScreenAdr()+loc_anim_render_buffer;
   switch (act)
      {
      case MGIF_LZW:
      case MGIF_COPY:small_anm_buff(p,data,paleta);break;
      case MGIF_DELTA:small_anm_delta(p,data,paleta);break;
-     case MGIF_PAL:paleta=data;break;
+     case MGIF_PAL:{const word *src16=(const word *)data;int i;for(i=0;i<256;i++)paleta[i]=rgb555to32(src16[i]);}break;
      }
   }
 

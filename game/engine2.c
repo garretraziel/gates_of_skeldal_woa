@@ -8,22 +8,22 @@
 typedef ZOOMINFO tzoom;
 
 extern ZOOMINFO zoom;
-extern word *screen;
+extern pixel_t *screen;
 
 #define SIKMA_STENA(suffx, op)                              \
 void sikma_zleva_##suffx(void)                               \
 {                                                           \
                                                             \
     int32_t scr_linelen2 = GetScreenPitch();                \
-	word *scr = (word *)zoom.startptr;                      \
-	const word *palette = (word *)zoom.palette;             \
+	pixel_t *scr = (pixel_t *)zoom.startptr;                \
+	const pixel_t *palette = zoom.palette;                  \
 	word cy = zoom.ycount;                                  \
 	const unsigned char *pixmap = zoom.texture;             \
 	const short *ytable = zoom.ytable;                      \
 	while (cy && pixmap < (const unsigned char *)zoom.texture_end) {     \
 		const int32_t *xtable = zoom.xtable;                \
 		word cx = zoom.xmax;                                \
-		word *scr_iter = scr;                               \
+		pixel_t *scr_iter = scr;                            \
 		const unsigned char *pixmap_iter = pixmap;          \
 		while (cx > 0) {                                    \
 			unsigned char pb = *pixmap_iter++;              \
@@ -43,15 +43,15 @@ void sikma_zleva_##suffx(void)                               \
 void sikma_zprava_##suffx(void)                              \
 {                                                           \
     int32_t scr_linelen2 = GetScreenPitch();                \
-	word *scr = (word *)zoom.startptr;                      \
-	const word *palette = (word *)zoom.palette;             \
+	pixel_t *scr = (pixel_t *)zoom.startptr;                \
+	const pixel_t *palette = zoom.palette;                  \
 	word cy = zoom.ycount;                                  \
 	const unsigned char *pixmap = zoom.texture;             \
 	const short *ytable = zoom.ytable;                      \
 	while (cy && pixmap < (const unsigned char *)zoom.texture_end) {     \
 		const int32_t *xtable = zoom.xtable;                \
 		word cx = zoom.xmax;                                \
-		word *scr_iter = scr;                               \
+		pixel_t *scr_iter = scr;                            \
 		const unsigned char *pixmap_iter = pixmap;          \
 		while (cx > 0) {                                    \
 			unsigned char pb = *pixmap_iter++;              \
@@ -79,16 +79,16 @@ void fcdraw(const void *source,void *target, const void *table)
 //#pragma aux fcdraw parm [EDX][EBX][EAX] modify [ECX ESI EDI];
 {
 
-	word *src = (word *)source;
-	word *trg = (word *)target;
+	pixel_t *src = (pixel_t *)source;
+	pixel_t *trg = (pixel_t *)target;
 	T_FLOOR_MAP *t = (T_FLOOR_MAP *)table;
 	uint32_t cc;
 
 	do {
-		word *ss = t->txtrofs/2+src;
-		word *tt = t->lineofs/2+trg;
+		pixel_t *ss = t->txtrofs/sizeof(pixel_t)+src;
+		pixel_t *tt = t->lineofs/sizeof(pixel_t)+trg;
 		cc = t->linesize;
-		memcpy(tt,ss,cc*2);
+		memcpy(tt,ss,cc*sizeof(pixel_t));
 		cc = t->counter;
 		t++;
 	} while (cc != 0);
@@ -257,9 +257,9 @@ void small_anm_buff(void *target,void *buff,void *paleta)
 //#pragma aux small_anm_buff parm[edi][esi][ebx] modify [eax ecx]
 {
     int32_t scr_linelen2 = GetScreenPitch();
-	word *t = (word *)target;
+	pixel_t *t = (pixel_t *)target;
 	unsigned char *s = (unsigned char *)buff;
-	word *p = (word *)paleta;
+	pixel_t *p = (pixel_t *)paleta;
 	int i,j;
 
 	for ( i = 0; i < 180; i++) {
@@ -290,8 +290,8 @@ void small_anm_delta(void *target,void *buff,void *paleta)
 //#pragma aux small_anm_delta parm[edi][esi][ebx] modify [eax ecx]
 {
     int32_t scr_linelen2 = GetScreenPitch();
-	word *t = (word *)target;
-	word *pal = (word *)paleta;
+	pixel_t *t = (pixel_t *)target;
+	pixel_t *pal = (pixel_t *)paleta;
 	uint32_t *deltastart = (uint32_t *)buff;
 	uint32_t ofs = *deltastart++;
 	unsigned char *control = (unsigned char *)deltastart;
@@ -299,7 +299,7 @@ void small_anm_delta(void *target,void *buff,void *paleta)
 	int y;
 
 	for (y = 0; y < 180; y++) {
-		word *tp = t;
+		pixel_t *tp = t;
 		do {
 			unsigned char c = *control++;
 			if (c >= 0xc0) {
@@ -485,7 +485,7 @@ sac_end:sub     ecx,2           ;odecti counter
 	*/
 }
 
-#define pic_start 2+2+2+512*5+512*5
+#define pic_start (2+2+2+256*(int)sizeof(pixel_t)*5+256*(int)sizeof(pixel_t)*5)
 #define ed_stack 800*4+600*4
 #define ed_stk1 600*4
 
@@ -495,7 +495,7 @@ void enemy_draw(const void *src,void *trg,int shade,int scale,int maxspace,int c
 {
     int32_t scr_linelen2 = GetScreenPitch();
 	word *picinfo = (word *)src;
-	word *screen = (word *)trg;
+	pixel_t *screen = (pixel_t *)trg;
 	int xtable[800];
 	int ytable[1200];
 	int xcount;
@@ -503,7 +503,7 @@ void enemy_draw(const void *src,void *trg,int shade,int scale,int maxspace,int c
 	word pcx = picinfo[0];
 	word pcy = picinfo[1];
 	unsigned char *picdata = (unsigned char *)src + pic_start;
-	word *palette = picinfo+shade/2;
+	pixel_t *palette = (pixel_t *)((byte *)src + shade);
 	int clipl = clip & 0xFFFF;
 	int clipr = clip >> 16;
 	int yiter;
@@ -558,7 +558,7 @@ void enemy_draw(const void *src,void *trg,int shade,int scale,int maxspace,int c
 			int xpos = xiter-clipl;
 			unsigned char p = row[xtable[xiter]];
 			if (p != 0) {
-				if (p == 1) screen[xpos] = (screen[xpos] & 0x7BDE) >> 1;
+				if (p == 1) screen[xpos] = (screen[xpos] & 0xFEFEFE) >> 1;
 				else screen[xpos] = palette[p];
 			}
 			++xiter;
@@ -682,7 +682,7 @@ void enemy_draw_transp(const void *src,void *trg,const void *shade,int scale,int
 
     int32_t scr_linelen2 = GetScreenPitch();
 	word *picinfo = (word *)src;
-	word *screen = (word *)trg;
+	pixel_t *screen = (pixel_t *)trg;
 	int xtable[800];
 	int ytable[1200];
 	int xcount;
@@ -690,7 +690,7 @@ void enemy_draw_transp(const void *src,void *trg,const void *shade,int scale,int
 	word pcy = picinfo[1];
 	word type = picinfo[2];
 	unsigned char *picdata = (unsigned char *)src+(type == (512+8)?6:pic_start);
-	word *palette = (word *)shade;
+	pixel_t *palette = (pixel_t *)shade;
 	int clipl = clip & 0xFFFF;
 	int clipr = clip >> 16;
 	int yiter;
@@ -714,7 +714,6 @@ void enemy_draw_transp(const void *src,void *trg,const void *shade,int scale,int
 			sp--;
 		}
 		*w++=-1;
-		//ytable je hotova - obsahuje ofsety v obrazku pro kazdou radku a na konci je -1
 	}
 
 	//prepare xtable
@@ -732,7 +731,6 @@ void enemy_draw_transp(const void *src,void *trg,const void *shade,int scale,int
 		}
 		xcount = w - xtable;
 		*w++=-1;
-		//xtable je hotova - obsahuje offset v obrazku pro kazdy sloupec a na konci je -1
 	}
 
 	if (clipl > xcount) return;
@@ -745,7 +743,7 @@ void enemy_draw_transp(const void *src,void *trg,const void *shade,int scale,int
 			int xpos = xiter -clipl;
 			unsigned char p = row[xtable[xiter]];
 			if (p != 0) {
-				if (p & 0x80) screen[xpos] = ((screen[xpos] & 0x7BDE) + (palette[p] & 0x7BDE))>>1;
+				if (p & 0x80) screen[xpos] = BLEND_PIXELS(screen[xpos], palette[p]);
 				else screen[xpos] = palette[p];
 			}
 			++xiter;
@@ -757,7 +755,6 @@ void enemy_draw_transp(const void *src,void *trg,const void *shade,int scale,int
 
 /*	__asm
 	{
-		mov esi,src
 			mov edi,trg
 			mov ebx,shade
 			mov edx,scale
@@ -871,7 +868,7 @@ void enemy_draw_mirror_transp(const void *src,void *trg,const void *shade,int sc
 
     int32_t scr_linelen2 = GetScreenPitch();
 	word *picinfo = (word *)src;
-	word *screen = (word *)trg;
+	pixel_t *screen = (pixel_t *)trg;
 	int xtable[800];
 	int ytable[1200];
 	int xcount;
@@ -879,7 +876,7 @@ void enemy_draw_mirror_transp(const void *src,void *trg,const void *shade,int sc
 	word pcy = picinfo[1];
 	word type = picinfo[2];
 	unsigned char *picdata = (unsigned char *)src+(type == (512+8)?6:pic_start);
-	word *palette = (word *)shade;
+	pixel_t *palette = (pixel_t *)shade;
 	int clipl = clip & 0xFFFF;
 	int clipr = clip >> 16;
 	int yiter;
@@ -935,7 +932,7 @@ void enemy_draw_mirror_transp(const void *src,void *trg,const void *shade,int sc
 			unsigned char p = row[xtable[xiter]];
 			if (p != 0) {
 				if (p & 0x80) {
-				    screen[xpos] = ((screen[xpos] & 0x7BDE) + (palette[p] & 0x7BDE))>>1;
+				    screen[xpos] = BLEND_PIXELS(screen[xpos], palette[p]);
 				}
 				else {
 				    screen[xpos] = palette[p];
@@ -1062,14 +1059,14 @@ void enemy_draw_mirror(const void *src,void *trg,int shade,int scale,int maxspac
 {
     int32_t scr_linelen2 = GetScreenPitch();
 	word *picinfo = (word *)src;
-	word *screen = (word *)trg;
+	pixel_t *screen = (pixel_t *)trg;
 	int xtable[800];
 	int ytable[1200];
 	int xcount;
 	word pcx = picinfo[0];
 	word pcy = picinfo[1];
 	unsigned char *picdata = (unsigned char *)src + pic_start;
-	word *palette = picinfo+shade/2;
+	pixel_t *palette = (pixel_t *)((byte *)src + shade);
 	int clipl = clip & 0xFFFF;
 	int clipr = clip >> 16;
 	int yiter;
@@ -1124,7 +1121,7 @@ void enemy_draw_mirror(const void *src,void *trg,int shade,int scale,int maxspac
 			int xpos = xiter;
 			unsigned char p = row[xtable[xiter]];
 			if (p != 0) {
-				if (p == 1) screen[xpos] = (screen[xpos] & 0x7BDE) >> 1;
+				if (p == 1) screen[xpos] = (screen[xpos] & 0xFEFEFE) >> 1;
 				else screen[xpos] = palette[p];
 			}
 			++xiter;

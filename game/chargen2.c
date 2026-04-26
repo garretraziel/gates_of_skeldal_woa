@@ -173,7 +173,7 @@ void redraw_generator()
   put_picture(INV_DESK,SCREEN_OFFLINE,ablock(H_GENERACE));
   put_picture(0,SCREEN_OFFLINE,ablock(H_IOBLOUK));
   bott_draw(1);
-  memcpy(screen+(480-102)*640,ablock(H_BOTTBAR),640*102*2);
+  memcpy(screen+(480-102)*640,ablock(H_BOTTBAR),640*102*sizeof(pixel_t));
   put_picture(0,0,ablock(H_GEN_TOPBAR));
   zobraz_staty(&z);
   ukaz_mysku();

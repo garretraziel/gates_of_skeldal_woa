@@ -660,8 +660,8 @@ void other_draw()
   draw_console_window();
   int32_t scr_linelen2 = GetScreenPitch();
 
-  memset(GetScreenAdr()+(SCREEN_OFFLINE-1)*scr_linelen2,0,1280);
-  memset(GetScreenAdr()+(SCREEN_OFFLINE+360)*scr_linelen2,0,1280);
+  memset(GetScreenAdr()+(SCREEN_OFFLINE-1)*scr_linelen2,0,640*sizeof(pixel_t));
+  memset(GetScreenAdr()+(SCREEN_OFFLINE+360)*scr_linelen2,0,640*sizeof(pixel_t));
   }
 
 void display_spell_in_icone(int handle,int xicht)

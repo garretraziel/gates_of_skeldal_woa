@@ -18,7 +18,7 @@ byte fontdsize=0;
 byte *palmem,*xlatmem;
 void (*showview)(word,word,word,word);
 char line480=0;
-int32_t screen_buffer_size=512000;
+int32_t screen_buffer_size=640*480*4;
 
 const void *mscursor,*mssavebuffer=NULL;
 integer mscuroldx=0,mscuroldy=0;
