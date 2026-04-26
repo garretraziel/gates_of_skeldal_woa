@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stdarg.h>
 #include "../config.h"
+#include "../platform.h"
 
 #include <stddef.h>
 #ifndef __BGRAPH_DX_WRAPPER_
@@ -10,13 +11,13 @@
 extern "C" {
 #endif
 
-uint16_t *GetScreenAdr(void);
-uint16_t *GetBuffer2nd(void);
+pixel_t *GetScreenAdr(void);
+pixel_t *GetBuffer2nd(void);
 int32_t GetScreenPitch(void);
 int32_t GetBuffer2ndPitch(void);
 int32_t GetScreenSizeBytes(void);
 
-void RedirectScreen(uint16_t *newaddr);
+void RedirectScreen(pixel_t *newaddr);
 void RestoreScreen(void);
 void RedirectScreenBufferSecond(void);
 

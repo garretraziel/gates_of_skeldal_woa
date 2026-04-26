@@ -112,7 +112,7 @@ public:
     void close_audio();
 
 
-    void present_rect(uint16_t *pixels, unsigned int pitch, unsigned int x, unsigned int y, unsigned int xs,unsigned ys);
+    void present_rect(pixel_t *pixels, unsigned int pitch, unsigned int x, unsigned int y, unsigned int xs,unsigned ys);
     void swap_render_buffers();
     void swap_display_buffers();
     void show_blend_transition(const SDL_Rect &wrkarea, const SDL_Rect &prev, const SDL_Rect &next, float phase);
@@ -243,12 +243,12 @@ protected:
     unique_value<SDL_AudioDeviceID, SDL_Audio_Deleter> _audio;
     SDL_Texture *_visible_texture = nullptr;
     SDL_Texture *_hidden_texture = nullptr;
-    uint32_t _texture_render_format = SDL_PIXELFORMAT_ARGB1555;
+    uint32_t _texture_render_format = SDL_PIXELFORMAT_ARGB8888;
 
     PixelScaleType _pixel_scaler = PixelScaleType::none;
     int _scale_factor = 1;
-    std::vector<uint16_t> _shadow_buffer;
-    std::vector<uint16_t> _scaled_buffer;
+    std::vector<pixel_t> _shadow_buffer;
+    std::vector<pixel_t> _scaled_buffer;
     std::unique_ptr<SDL_Texture, SDL_Deleter> _scaled_texture;
     bool _shadow_buffer_ready = false;
 
@@ -290,7 +290,7 @@ protected:
     requires(std::is_trivially_copy_constructible_v<T>)
     void push_item(const T &item);
     void push_item(const std::string_view &item);
-    void push_update_msg(const SDL_Rect &rc, const uint16_t *data, int pitch);
+    void push_update_msg(const SDL_Rect &rc, const pixel_t *data, int pitch);
     void push_swap_buffers();
 
     template<typename T>

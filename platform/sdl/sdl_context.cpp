@@ -458,9 +458,9 @@ int SDLContext::adjust_deadzone(int v, short deadzone) {
 }
 
 template<int shift>
-constexpr Uint32 shift_bits_5(Uint32 val) {
+constexpr Uint32 shift_bits_8(Uint32 val) {
     if constexpr(shift > 0) {
-        return val << shift | shift_bits_5<shift-5>(val);
+        return (val << shift) | (val >> (8 - shift));
     } else if constexpr(shift < 0) {
         return val >> (-shift);
     } else {
@@ -481,25 +481,25 @@ void SDLContext::convert_bitmap(const void *pixels, SDL_Rect rect, int pitch) {
     constexpr auto BBits = FormatMapping<pixel_format>::BBits;
     constexpr auto ABits = FormatMapping<pixel_format>::ABits;
 
-    const Uint16 *src = static_cast<const Uint16*>(pixels);
+    const pixel_t *src = static_cast<const pixel_t*>(pixels);
     auto trg = converted_pixels.data();
     for (int y = 0; y < rect.h; ++y) {
         for (int x = 0; x < rect.w; ++x) {
-            Uint16 pixel = src[x];
-            Uint32 a = (pixel & 0x8000) ? 0 : 0x1F;
-            Uint32 r = ((pixel >> 10) & 0x1F);
-            Uint32 g = ((pixel >> 5) & 0x1F);
-            Uint32 b = (pixel & 0x1F);
+            pixel_t pixel = src[x];
+            Uint32 r = (pixel >> 16) & 0xFF;
+            Uint32 g = (pixel >> 8) & 0xFF;
+            Uint32 b = pixel & 0xFF;
+            Uint32 a = (pixel & BGSWITCHBIT) ? 0 : 0xFF;
 
-            r = shift_bits_5<RBits-5>(r);
-            g = shift_bits_5<GBits-5>(g);
-            b = shift_bits_5<BBits-5>(b);
-            a = shift_bits_5<ABits-5>(a);
+            r = shift_bits_8<RBits-8>(r);
+            g = shift_bits_8<GBits-8>(g);
+            b = shift_bits_8<BBits-8>(b);
+            a = shift_bits_8<ABits-8>(a);
 
             trg[x] = (r << RShift) | (g << GShift) | (b << BShift) | (a << AShift);
         }
         trg += rect.w;
-        src = src + pitch / 2;
+        src = src + pitch / sizeof(pixel_t);
     }
 }
 
@@ -773,7 +773,7 @@ void SDLContext::event_loop(std::stop_token stp) {
                         }
                         SDL_Rect full = {0, 0, dstW, dstH};
                         update_texture_with_conversion(_scaled_texture.get(), &full,
-                                                       _scaled_buffer.data(), dstW * 2);
+                                                       _scaled_buffer.data(), dstW * sizeof(pixel_t));
                     }
                     refresh_screen();
                 } else {
@@ -836,7 +836,7 @@ void SDLContext::event_loop(std::stop_token stp) {
 
 
 
-void SDLContext::present_rect(uint16_t *pixels, unsigned int pitch,
+void SDLContext::present_rect(pixel_t *pixels, unsigned int pitch,
         unsigned int x, unsigned int y, unsigned int xs, unsigned ys) {
 
 
@@ -970,11 +970,11 @@ void SDLContext::update_screen(bool force_refresh) {
                 case DisplayRequest::update: {
                     SDL_Rect r;
                     pop_item(iter, r);
-                    std::string_view data = pop_data(iter, r.w*r.h*2);
-                    update_texture_with_conversion(_texture.get(), &r, data.data(), r.w*2);
+                    std::string_view data = pop_data(iter, r.w*r.h*sizeof(pixel_t));
+                    update_texture_with_conversion(_texture.get(), &r, data.data(), r.w*sizeof(pixel_t));
                     // Maintain shadow buffer for scaler
                     if (!_shadow_buffer.empty()) {
-                        const uint16_t *src = reinterpret_cast<const uint16_t *>(data.data());
+                        const pixel_t *src = reinterpret_cast<const pixel_t *>(data.data());
                         for (int row = 0; row < r.h; ++row) {
                             std::copy_n(src + row * r.w, r.w,
                                         _shadow_buffer.data() + (r.y + row) * 640 + r.x);
@@ -988,13 +988,13 @@ void SDLContext::update_screen(bool force_refresh) {
                 case DisplayRequest::show_mouse_cursor: {
                     SDL_Rect r;
                     pop_item(iter, r);
-                    std::string_view data = pop_data(iter, r.w*r.h*2);
+                    std::string_view data = pop_data(iter, r.w*r.h*sizeof(pixel_t));
                     _mouse.reset(SDL_CreateTexture(_renderer.get(), _texture_render_format,SDL_TEXTUREACCESS_STATIC, r.w, r.h));
                     if (!_mouse) handle_sdl_error("Failed to create surface for mouse cursor");
                     SDL_SetTextureBlendMode(_mouse.get(), SDL_BLENDMODE_BLEND);
                     _mouse_rect.w = r.w;
                     _mouse_rect.h = r.h;
-                    update_texture_with_conversion(_mouse.get(), NULL, data.data(), r.w*2);
+                    update_texture_with_conversion(_mouse.get(), NULL, data.data(), r.w*sizeof(pixel_t));
                 }
                 break;
                 case DisplayRequest::hide_mouse_cursor: {
@@ -1024,7 +1024,7 @@ void SDLContext::update_screen(bool force_refresh) {
                     SDL_Rect r;
                     pop_item(iter, id);
                     pop_item(iter, r);
-                    std::string_view data = pop_data(iter, r.w*r.h*2);
+                    std::string_view data = pop_data(iter, r.w*r.h*sizeof(pixel_t));
                     auto iter = std::find_if(_sprites.begin(), _sprites.end(),[&](const Sprite &x){
                         return x.id == id;
                     });
@@ -1034,7 +1034,7 @@ void SDLContext::update_screen(bool force_refresh) {
                     iter->_txtr.reset(SDL_CreateTexture(_renderer.get(), _texture_render_format, SDL_TEXTUREACCESS_STATIC,r.w, r.h));
                     if (!iter->_txtr) handle_sdl_error("Failed to create compositor sprite");
                     SDL_SetTextureBlendMode(iter->_txtr.get(), SDL_BLENDMODE_BLEND);
-                    update_texture_with_conversion(iter->_txtr.get(), NULL, data.data(), r.w*2);
+                    update_texture_with_conversion(iter->_txtr.get(), NULL, data.data(), r.w*sizeof(pixel_t));
                     iter->_rect = r;
                     update_zindex();
                 } break;
@@ -1120,7 +1120,7 @@ void SDLContext::update_screen(bool force_refresh) {
             }
             SDL_Rect full = {0, 0, dstW, dstH};
             update_texture_with_conversion(_scaled_texture.get(), &full,
-                                           _scaled_buffer.data(), dstW * 2);
+                                           _scaled_buffer.data(), dstW * sizeof(pixel_t));
             }
         }
     }
@@ -1152,12 +1152,12 @@ void SDLContext::push_item(const std::string_view &item) {
     std::copy(item.begin(), item.end(),  _display_update_queue.begin()+sz);
 }
 
-void SDLContext::push_update_msg(const SDL_Rect &rc, const uint16_t *data, int pitch) {
+void SDLContext::push_update_msg(const SDL_Rect &rc, const pixel_t *data, int pitch) {
     push_item(DisplayRequest::update);
     push_item(rc);
     auto sz = _display_update_queue.size();
-    _display_update_queue.resize(sz+rc.w*rc.h*2);
-    short *trg = reinterpret_cast<short *>(_display_update_queue.data()+sz);
+    _display_update_queue.resize(sz+rc.w*rc.h*sizeof(pixel_t));
+    pixel_t *trg = reinterpret_cast<pixel_t *>(_display_update_queue.data()+sz);
     for (int yp = 0; yp < rc.h; ++yp) {
         std::copy(data, data+rc.w, trg);
         trg += rc.w;
@@ -1311,7 +1311,7 @@ void SDLContext::set_window_icon(const void *icon_data, size_t icon_size) {
 }
 
 extern "C" {
-void put_picture_ex(unsigned short x,unsigned short y,const void *p, unsigned short *target_addr, size_t pitch);
+void put_picture_ex(unsigned short x,unsigned short y,const void *p, pixel_t *target_addr, size_t pitch);
 }
 
 void  SDLContext::push_hi_image(const unsigned short *image) {
@@ -1321,9 +1321,9 @@ void  SDLContext::push_hi_image(const unsigned short *image) {
     push_item(rc);
     auto sz = _display_update_queue.size();
     auto imgsz = rc.w*rc.h;
-    _display_update_queue.resize(sz+imgsz*2);
-    unsigned short *trg = reinterpret_cast<unsigned short *>(_display_update_queue.data()+sz);
-    std::fill(trg, trg+imgsz, 0x8000);
+    _display_update_queue.resize(sz+imgsz*sizeof(pixel_t));
+    pixel_t *trg = reinterpret_cast<pixel_t *>(_display_update_queue.data()+sz);
+    std::fill(trg, trg+imgsz, static_cast<pixel_t>(BGSWITCHBIT));
     put_picture_ex(0, 0, image, trg, rc.w);
 }
 

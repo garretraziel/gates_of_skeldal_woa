@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include "../platform.h"
 
 enum class PixelScaleType {
     none,
@@ -7,12 +8,12 @@ enum class PixelScaleType {
     scale3x
 };
 
-/// Scale2x (EPX/AdvMAME2x) pixel art upscaling on RGB555 pixels
+/// Scale2x (EPX/AdvMAME2x) pixel art upscaling on pixel_t pixels
 /// srcPitch and dstPitch are in pixels (not bytes)
-void pixel_scale2x(const uint16_t *src, uint16_t *dst,
+void pixel_scale2x(const pixel_t *src, pixel_t *dst,
                    int srcW, int srcH, int srcPitch, int dstPitch);
 
-/// Scale3x (AdvMAME3x) pixel art upscaling on RGB555 pixels
+/// Scale3x (AdvMAME3x) pixel art upscaling on pixel_t pixels
 /// srcPitch and dstPitch are in pixels (not bytes)
-void pixel_scale3x(const uint16_t *src, uint16_t *dst,
+void pixel_scale3x(const pixel_t *src, pixel_t *dst,
                    int srcW, int srcH, int srcPitch, int dstPitch);
