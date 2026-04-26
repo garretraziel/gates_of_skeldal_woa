@@ -398,7 +398,7 @@ static const void *bott_draw_normal(const void *pp, int32_t *s)
         w=ablock(H_MZASAH1+mob_dostal-1);
         put_picture(580-(w[0]>>1),55-(w[1]>>1),w);
         itoa(mob_dostal_pocet,s,10);
-        set_font(H_FLITT5,0xffff);
+        set_font(H_FLITT5,PIXEL_NODRAW);
         set_aligned_position(580,55,1,1,s);
         outtext(s);
         }

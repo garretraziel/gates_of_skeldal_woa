@@ -861,7 +861,7 @@ void ask_video(void)
      }
   while (ok);
   memset(screen,0,screen_buffer_size);
-  buffer_2nd=(word *)getmem(screen_buffer_size);
+  buffer_2nd=(pixel_t *)getmem(screen_buffer_size);
   memset(buffer_2nd,0,screen_buffer_size);
   }
 

@@ -665,8 +665,8 @@ void delete_from_timer(int id);
 THE_TIMER *find_timer(int id);
 void objekty_mimo(THE_TIMER *t);
 void mouse_set_cursor(int cursor);
-#define FONT_TSHADOW 0x10000
-#define FONT_TSHADOW_GRAY 0x30000
+#define FONT_TSHADOW 0x10000000
+#define FONT_TSHADOW_GRAY 0x30000000
 void set_font(int font,int c1,...);
 void bott_draw(char);
 const void *bott_draw_proc(const void *p, int32_t *s, int h);
