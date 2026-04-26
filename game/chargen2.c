@@ -102,7 +102,7 @@ static void display_race_line(int line,char pushed)
   int x,y;
   char *c;
 
-  set_font(H_FBOLD,pushed?0x3e0:0x7fff);
+  set_font(H_FBOLD,pushed?RGB555(0,31,0):RGB555(31,31,31));
   x=INV_DESK+137;y=INV_DESC_Y+170+22*line;
   put_textured_bar(ablock(H_BUTBIG),x,y,100,20,0,20*pushed);
   x+=49+pushed;y+=9+pushed;
@@ -113,7 +113,7 @@ static void display_race_line(int line,char pushed)
 
 static void tlac2(int x,int y,char *text,int pushed)
   {
-  set_font(H_FBOLD,pushed?0x3e0:0x7fff);
+  set_font(H_FBOLD,pushed?RGB555(0,31,0):RGB555(31,31,31));
   put_textured_bar(ablock(H_BUTSMALL),x,y,56,20,0,20*pushed);
   x+=27+pushed;y+=9+pushed;
   set_aligned_position(x,y,1,1,text);outtext(text);
@@ -133,7 +133,7 @@ static void display_page2()
   int i,x,y;
   char s[10];
 
-  set_font(H_FBOLD,0x7fff);
+  set_font(H_FBOLD,RGB555(31,31,31));
   position(INV_DESC_X,INV_DESC_Y);outtext(texty[122]);
   x=INV_DESC_X+10;y=INV_DESC_Y+100;
   for(i=0;i<4;i++)
@@ -154,7 +154,7 @@ static void zobraz_staty(T_STATY *st)
   {
   char s[100];
 
-  set_font(H_FONT6,(28*1024+16*32+2));
+  set_font(H_FONT6,RGB555(28,16,2));
   sprintf(s,texty[2],st->zivl,st->zivh);
   position(250,3);outtext(s);
   sprintf(s,texty[3],st->manl,st->manh);

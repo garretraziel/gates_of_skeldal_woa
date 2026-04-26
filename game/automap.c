@@ -419,12 +419,12 @@ static void draw_amap_sector(int x,int y,int sector,int mode,int turn,int line1,
               {
               int i;
               TSTENA *sd;
-              case S_SCHODY:set_font(H_FSYMB,0x3e0);
+              case S_SCHODY:set_font(H_FSYMB,RGB555(0,31,0));
                             memcpy(charcolors,stairs_colors,sizeof(stairs_colors));
                             print_symbol(x,y,'s');break;
               case S_TELEPORT:
                   for(i=0,sd=map_sides+sector*4;i<4 && ~sd->flags & SD_SEC_VIS;i++,sd++) {}
-                  if (i!=4) {set_font(H_FSYMB,0x3e0);print_symbol(x,y,'T');}
+                  if (i!=4) {set_font(H_FSYMB,RGB555(0,31,0));print_symbol(x,y,'T');}
                   break;
               case S_DIRA:set_font(H_FSYMB,AUTOMAP_FONT_COLOR);print_symbol(x,y,'N');break;
               }
