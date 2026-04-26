@@ -59,8 +59,8 @@ typedef struct staty
 
 static T_STATY cur_stats;
 
-word color_butt_on[7]={0,RGB555(31,27,4),RGB555(30,26,4),RGB555(29,25,4)};
-word color_butt_off[7]={0,RGB555(10,10,10),RGB555(10,10,10),RGB555(10,10,10)};
+pixel_t color_butt_on[7]={0,RGB555(31,27,4),RGB555(30,26,4),RGB555(29,25,4)};
+pixel_t color_butt_off[7]={0,RGB555(10,10,10),RGB555(10,10,10),RGB555(10,10,10)};
 
 
 typedef struct vlasts

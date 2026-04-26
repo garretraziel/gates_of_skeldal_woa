@@ -554,7 +554,7 @@ typedef struct d_action
   struct d_action *next;
   }D_ACTION;
 
-extern word color_topbar[7];
+extern pixel_t color_topbar[7];
 
 
 extern MAPGLOBAL mglob;            //globalni informace o levelu
