@@ -98,7 +98,7 @@ void draw_cl_window(WINDOW *o)
 
 
 
-WINDOW *create_window(int x,int y, int xs, int ys, word color, CTL3D *okraj)
+WINDOW *create_window(int x,int y, int xs, int ys, pixel_t color, CTL3D *okraj)
   {
   WINDOW *p;
 
@@ -227,10 +227,10 @@ void absolute_window(WINDOW *w,OBJREC *o, int *x, int *y)
      }
   }
 
-  void disable_bar(int x,int y,int xs,int ys,word color)
+  void disable_bar(int x,int y,int xs,int ys,pixel_t color)
      {
      int i,j;
-     word *a;
+     pixel_t *a;
      int32_t scr_linelen2 = GetScreenPitch();
 
      for (i=y;i<=y+ys;i++)
@@ -238,8 +238,8 @@ void absolute_window(WINDOW *w,OBJREC *o, int *x, int *y)
         a=GetScreenAdr()+scr_linelen2*i+x;
         for(j=x;j<=x+xs;j++)
            {
-           *a=((*a & RGB555(30,30,30))+(color & RGB555(30,30,30)))>>1;
-           *a=((*a & RGB555(30,30,30))+(color & RGB555(30,30,30)))>>1;
+           *a=((*a & AVG_PIXEL_MASK)+(color & AVG_PIXEL_MASK))>>1;
+           *a=((*a & AVG_PIXEL_MASK)+(color & AVG_PIXEL_MASK))>>1;
            a++;
            }
         }
@@ -382,7 +382,7 @@ void define(int id,int x,int y,int xs,int ys,char align,void (*initproc)(OBJREC 
   add_to_idlist(o);
   }
 
-CTL3D *border(word light,word shadow, word bsize, word btype)
+CTL3D *border(pixel_t light,pixel_t shadow, word bsize, word btype)
   {
   static CTL3D p;
 
@@ -390,7 +390,7 @@ CTL3D *border(word light,word shadow, word bsize, word btype)
   return &p;
   }
 
-void property(CTL3D *ctl,const word *font,FC_TABLE *fcolor,word color)
+void property(CTL3D *ctl,const word *font,FC_TABLE *fcolor,pixel_t color)
   {
   if (ctl!=NULL) memcpy(&o_end->border3d,ctl,sizeof(CTL3D));
   if (font!=NULL) o_end->font=font;
@@ -398,7 +398,7 @@ void property(CTL3D *ctl,const word *font,FC_TABLE *fcolor,word color)
   if (color!=0xffff) o_end->color=color;
   }
 
-FC_TABLE *flat_color(word color)
+FC_TABLE *flat_color(pixel_t color)
   {
   static FC_TABLE p;
 

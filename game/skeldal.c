@@ -325,15 +325,15 @@ const void *pcx_15bit_autofade(const void *p, int32_t *s, int h)
 const void *pcx_15bit_backgrnd(const void *p, int32_t *s, int h)
   {
   char *buff;
-  int32_t i;int32_t *z;
+  int32_t i;pixel_t *z;
 
   if (p!=NULL)
      {
      int r = load_pcx(p,*s,A_16BIT,&buff);
      assert(r>0);
-     z=(int32_t *)buff;
      *s=r;
-     for(i=*s;i>0;i-=4,z++) *z|=0x80008000;
+     z=(pixel_t *)(buff+6);
+     for(i=(*s-6)/sizeof(pixel_t);i>0;i--,z++) *z|=BGSWITCHBIT;
      return buff;
      }
   return NULL;
@@ -426,9 +426,8 @@ const void *load_mob_legacy_format(const void *p, int32_t *s, int h) {
 
 const void *set_background(const void *p, int32_t *s, int h)
   {
-  const word *data;
-  word *ptr;
-  const word *pal;
+  const pixel_t *pal;
+  pixel_t *ptr;
   char *pic;
   void *out;
   int counter;
@@ -437,11 +436,11 @@ const void *set_background(const void *p, int32_t *s, int h)
   if (!bgr_handle) return p;
   if (bgr_distance==-1) return p;
   int32_t scr_linelen2 = GetScreenPitch();
-  data=ablock(bgr_handle);
-  *s=scr_linelen2*360*2;
+  const void *data=ablock(bgr_handle);
+  *s=scr_linelen2*360*sizeof(pixel_t);
   out = ptr=getmem(*s);
   counter=scr_linelen2*360;
-  pal=data+3+bgr_distance*256;
+  pal=(const pixel_t *)((const char *)data+6)+bgr_distance*256;
   pic=(char *)data+PIC_FADE_PAL_SIZE;
   do
 	*ptr++=pal[(uint8_t)*pic++] | BGSWITCHBIT;

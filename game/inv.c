@@ -1519,7 +1519,7 @@ void inv_info_box(char *text1,char *text2,char *text3,char asterix)
   info_box_drawed=1;
   if (info_box_below==NULL)
      {
-     info_box_below=getmem((INV_INFO_XS+28)*(ys+28)*2+6);
+     info_box_below=getmem((INV_INFO_XS+28)*(ys+28)*sizeof(pixel_t)+6);
      get_picture(INV_INFO_X-12,INV_INFO_Y-12,INV_INFO_XS+28,ys+28,info_box_below);
      }
   x=INV_INFO_X;

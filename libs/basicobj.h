@@ -7,7 +7,7 @@ extern word *msg_icn_font;
 int msg_box(char *title, char icone, char *text, ... );
 
 
-void highlight(CTL3D *c,word color);
+void highlight(CTL3D *c,pixel_t color);
 CTL3D *def_border(int btype,int color);
 void xor_rectangle(int x,int y,int xs,int ys);
 

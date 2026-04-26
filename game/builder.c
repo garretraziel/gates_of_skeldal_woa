@@ -248,7 +248,7 @@ void draw_blood(char mode,int mob_dostal,int mob_dostal_pocet)
 	static int block;
 	static int dostal;
 	char s[20];
-	word *adr;
+	pixel_t *adr;
 	int i;
 
 	int32_t scr_linelen2 = GetScreenPitch();
@@ -269,13 +269,13 @@ void draw_blood(char mode,int mob_dostal,int mob_dostal_pocet)
 	set_aligned_position(60+520,51+378,1,1,s);outtext(s);
 	}
 
-word *bott_clear(void)
+pixel_t *bott_clear(void)
   {
-  word *bott_scr;
+  pixel_t *bott_scr;
   int32_t scr_linelen2 = GetScreenPitch();
 
   int32_t sz;
-  bott_scr=(word *)getmem(sz = scr_linelen2*104*2);
+  bott_scr=(pixel_t *)getmem(sz = scr_linelen2*104*sizeof(pixel_t));
   memset(bott_scr,0,sz);
   return bott_scr;
   }
@@ -291,7 +291,7 @@ static void draw_small_icone(int num,int x,int y)
 
 static const void *bott_fletna_normal(const void *pp, int32_t *s)
   {
-  word *bott_scr;
+  pixel_t *bott_scr;
   int i,x;
   bott_scr=bott_clear();
   RedirectScreen(bott_scr);
@@ -311,7 +311,7 @@ static const void *bott_fletna_normal(const void *pp, int32_t *s)
 static const void *bott_draw_normal(const void *pp, int32_t *s)
   {
   int i,j;int x,xs=0,y;
-  word *bott_scr;
+  pixel_t *bott_scr;
   THUMAN *p;
 
   int32_t scr_linelen2 = GetScreenPitch();

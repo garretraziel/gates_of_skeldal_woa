@@ -27,10 +27,11 @@
 
 typedef struct ctl3d
   {
-  word light,shadow,bsize,ctldef;
+  pixel_t light,shadow;
+  word bsize,ctldef;
   }CTL3D;
 
-typedef word FC_TABLE[7];
+typedef pixel_t FC_TABLE[7];
 typedef FC_TABLE FC_PALETTE[16];
 
 //Run_routs:
@@ -61,7 +62,7 @@ typedef struct objrec
   {
   short x,y,xs,ys;
   CTL3D border3d;
-  word color;
+  pixel_t color;
   word id;
   char align,autoresizex,autoresizey;
   char enabled;
@@ -105,7 +106,7 @@ typedef struct window
   {
   short x,y,xs,ys;
   CTL3D border3d;
-  word color;
+  pixel_t color;
   OBJREC *objects;
   int32_t id;
   char modal,minimized,popup;
@@ -129,16 +130,16 @@ extern void *gui_background;
 
 
 void draw_border(integer x,integer y,integer xs,integer ys,CTL3D *btype);
-WINDOW *create_window(int x,int y, int xs, int ys, word color, CTL3D *okraj);
+WINDOW *create_window(int x,int y, int xs, int ys, pixel_t color, CTL3D *okraj);
 int32_t desktop_add_window(WINDOW *w);
 void select_window(int32_t id);
 WINDOW *find_window(int32_t id);
 void redraw_object(OBJREC *o);
 void redraw_window(void);
 void define(int id,int x,int y,int xs,int ys,char align,void (*initproc)(OBJREC *),...);
-CTL3D *border(word light,word shadow, word bsize, word btype);
-void property(CTL3D *ctl,const word *font,FC_TABLE *fcolor,word color);
-FC_TABLE *flat_color(word color);
+CTL3D *border(pixel_t light,pixel_t shadow, word bsize, word btype);
+void property(CTL3D *ctl,const word *font,FC_TABLE *fcolor,pixel_t color);
+FC_TABLE *flat_color(pixel_t color);
 void aktivate_window(MS_EVENT *ms);
 void redraw_desktop(void);
 void close_window(WINDOW *w);
@@ -165,7 +166,7 @@ OBJREC *find_object(WINDOW *w,int id);
 void set_window_modal(void);
 void set_enable(int win_id,int obj_id,int condition);
 void run_background(void (*p)(void));
-void disable_bar(int x,int y,int xs,int ys,word color);
+void disable_bar(int x,int y,int xs,int ys,pixel_t color);
 void movesize_win(WINDOW *w, int newx,int newy, int newxs, int newys);
 void goto_control(int obj_id);
 
