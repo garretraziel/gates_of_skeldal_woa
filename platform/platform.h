@@ -54,6 +54,45 @@ static inline pixel_t rgb555to32(uint16_t c) {
     return pixel;
 }
 
+/// Blend foreground over background using 8-bit alpha.
+static inline pixel_t pixel_blend_alpha(pixel_t bg, pixel_t fg, unsigned int alpha) {
+    if (alpha == 0 || PIXEL_IS_TRANSPARENT(fg)) return bg;
+    if (alpha >= 255 || PIXEL_IS_TRANSPARENT(bg)) return fg & ~BGSWITCHBIT;
+    unsigned int inv = 255 - alpha;
+    unsigned int rb_bg = bg & 0x00FF00FFu;
+    unsigned int g_bg  = bg & 0x0000FF00u;
+    unsigned int rb_fg = fg & 0x00FF00FFu;
+    unsigned int g_fg  = fg & 0x0000FF00u;
+    unsigned int rb = (rb_bg * inv + rb_fg * alpha + 0x00800080u) >> 8;
+    unsigned int g  = (g_bg  * inv + g_fg  * alpha + 0x00000080u) >> 8;
+    return (rb & 0x00FF00FFu) | (g & 0x0000FF00u);
+}
+
+/// Additively blend a glow/tint color into a base pixel.
+static inline pixel_t pixel_additive(pixel_t bg, pixel_t fg, unsigned int alpha) {
+    if (alpha == 0 || PIXEL_IS_TRANSPARENT(fg)) return bg;
+    unsigned int add_r = (PIXEL_RED(fg) * alpha + 127u) / 255u;
+    unsigned int add_g = (PIXEL_GREEN(fg) * alpha + 127u) / 255u;
+    unsigned int add_b = (PIXEL_BLUE(fg) * alpha + 127u) / 255u;
+    unsigned int r = PIXEL_RED(bg) + add_r; if (r > 255u) r = 255u;
+    unsigned int g = PIXEL_GREEN(bg) + add_g; if (g > 255u) g = 255u;
+    unsigned int b = PIXEL_BLUE(bg) + add_b; if (b > 255u) b = 255u;
+    return (bg & 0xFF000000u) | (r << 16) | (g << 8) | b;
+}
+
+static inline pixel_t pixel_greyscale(pixel_t color) {
+    unsigned int grey = (PIXEL_RED(color) + PIXEL_GREEN(color) + PIXEL_BLUE(color)) / 3u;
+    return (color & 0xFF000000u) | (grey << 16) | (grey << 8) | grey;
+}
+
+static inline pixel_t pixel_desaturate(pixel_t color, unsigned int alpha) {
+    return pixel_blend_alpha(color, pixel_greyscale(color), alpha);
+}
+
+static inline pixel_t pixel_shade(pixel_t color, unsigned int alpha) {
+    return pixel_blend_alpha(color, 0, alpha);
+}
+
 #ifdef _MSC_VER
 #pragma warning(disable: 4244)
 #pragma warning(disable: 4996)

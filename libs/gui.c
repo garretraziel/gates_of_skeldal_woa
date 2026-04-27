@@ -238,8 +238,9 @@ void absolute_window(WINDOW *w,OBJREC *o, int *x, int *y)
         a=GetScreenAdr()+scr_linelen2*i+x;
         for(j=x;j<=x+xs;j++)
            {
-           *a=((*a & AVG_PIXEL_MASK)+(color & AVG_PIXEL_MASK))>>1;
-           *a=((*a & AVG_PIXEL_MASK)+(color & AVG_PIXEL_MASK))>>1;
+           pixel_t tinted = pixel_blend_alpha(*a, color & ~BGSWITCHBIT, 96);
+           tinted = pixel_desaturate(tinted, 144);
+           *a = pixel_shade(tinted, 52);
            a++;
            }
         }
@@ -1002,4 +1003,3 @@ void movesize_win(WINDOW *w, int newx,int newy, int newxs, int newys)
   w->ys=newys;
   check_window(w);
   }
-

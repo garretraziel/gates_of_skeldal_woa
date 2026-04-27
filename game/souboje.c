@@ -1484,7 +1484,7 @@ void fill_rune(char *d,int i)
            int32_t scr_linelen2 = GetScreenPitch();
            z=GetScreenAdr()+y*scr_linelen2;
            for(x=520;x<640;x++)
-              if (*dd++==i) z[x]=z[x]-((z[x] & 0x00FCFCFC)>>2);
+              if (*dd++==i) z[x]=pixel_shade(pixel_desaturate(z[x], 96), 88);
            }
 
   }
@@ -1509,8 +1509,8 @@ void display_rune_bar(THE_TIMER *_)
      for(i=0;i<7;i++,c>>=1)
        if (!(c & 1)) put_picture(520+coords[i][0],378+coords[i][1],ablock(H_RUNEHOLE));
        else if (!get_rune_enable(&postavy[select_player],(sel_zivel*7+i)*3)) fill_rune((char *)ablock(H_RUNEMASK),i+6);
-     if (sel_zivel) trans_bar(520,378,sel_zivel*24,22,0);
-     if (sel_zivel!=4)trans_bar(544+sel_zivel*24,378,96-sel_zivel*24,22,0);
+     if (sel_zivel) trans_bar_alpha(520,378,sel_zivel*24,22,0,176);
+     if (sel_zivel!=4)trans_bar_alpha(544+sel_zivel*24,378,96-sel_zivel*24,22,0,176);
      runebar=getmem(120*102*sizeof(pixel_t)+6);
      get_picture(520,378,120,102,runebar);
      }

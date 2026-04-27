@@ -745,18 +745,6 @@ void trans_line_y(int x,int y,int ys,int barva)
   trans_bar(x,y,1,ys,barva);
   }
 
-/// Blend pixel with color at given alpha (0=transparent, 255=opaque)
-static inline pixel_t blend_alpha(pixel_t bg, pixel_t fg, unsigned int alpha) {
-    unsigned int inv = 255 - alpha;
-    unsigned int rb_bg = bg & 0x00FF00FFu;
-    unsigned int g_bg  = bg & 0x0000FF00u;
-    unsigned int rb_fg = fg & 0x00FF00FFu;
-    unsigned int g_fg  = fg & 0x0000FF00u;
-    unsigned int rb = (rb_bg * inv + rb_fg * alpha + 0x00800080u) >> 8;
-    unsigned int g  = (g_bg  * inv + g_fg  * alpha + 0x00000080u) >> 8;
-    return (rb & 0x00FF00FFu) | (g & 0x0000FF00u);
-}
-
 void trans_bar_alpha(int x,int y,int xs,int ys,int barva,int alpha)
   {
   int32_t scr_linelen2 = GetScreenPitch();
@@ -782,7 +770,7 @@ void trans_bar_alpha(int x,int y,int xs,int ys,int barva,int alpha)
   if (y2>my) y2=my;
   for (i=y1,begline=GetScreenAdr()+scr_linelen2*i;i<=y2;i++,begline+=scr_linelen2)
     {
-    for (j=x1;j<=x2;j++) begline[j]=blend_alpha(begline[j],(pixel_t)barva,a);
+    for (j=x1;j<=x2;j++) begline[j]=pixel_blend_alpha(begline[j],(pixel_t)barva,a);
     }
   }
 
@@ -857,4 +845,3 @@ ppp_trn:inc     edi                             ;dalsi bod
         jnc     ppp_lp2
     }
   }*/
-

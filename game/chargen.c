@@ -303,9 +303,12 @@ static void zobraz_perlu(void)
      scr=sss;
      for(xxs=0;xxs<xs;xxs++)
         if (!*p) scr++,p++;else
-        if (*p<128) *scr++=b[(uint8_t)*p++];else
+        if (*p<128) {
+           pixel_t pearl = b[(uint8_t)*p++];
+           *scr++=pixel_additive(pearl, RGB888(40,72,140), 28);
+        } else
            {
-           *scr=(*scr & RGB555(30,30,30))>>1;
+           *scr=pixel_blend_alpha(*scr, RGB888(10,18,42), 96);
            scr++;p++;
            }
      sss+=scr_linelen2;
@@ -931,7 +934,6 @@ char enter_generator()
      }
   return 0;
   }
-
 
 
 
