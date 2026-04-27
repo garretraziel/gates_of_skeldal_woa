@@ -33,13 +33,20 @@ With the framebuffer now in 32-bit ARGB (8 bits per channel), the following enha
 - ✅ **Brightness adjustment** — folded into the same LUT. INI: `brightness=1.0` (0.5–2.0)
 - ✅ **Color temperature / warmth** — shifts R/B balance, folded into same LUT. INI: `color_temperature=0` (-100 to +100)
 - ✅ **Smooth transparency** — `trans_bar_alpha(x, y, xs, ys, color, alpha)` with per-channel alpha blending (0–255). `trans_bar25` now uses proper 25% opacity.
+- ✅ **Targeted UI/effect blending pass** — shared 32-bit blend helpers plus softer disabled controls, cleaner rune-bar dimming, and improved chargen pearl shading/glow.
 - **Better distance fog** — palette shading already uses 256 shade levels instead of 32. Fog transitions are smoother, especially noticeable in long corridors.
+- **Spell / projectile glows** — additive highlights for magic shots, impacts, shields, and rune effects.
+- **Scene mood overlays** — underwater tint, poison haze, confusion/night-vision, heat/lava tint.
+- **UI translucency and highlights** — softer selection rims, translucent panels, improved hover/pressed states.
+- **Reworked floor/ceiling autofade** — replace remaining RGB555-era interpolation with proper per-channel 32-bit shading.
 
 ### Medium Effort
 - **Bloom / glow effect** — extract pixels above a brightness threshold, Gaussian blur them, and add back. Makes torches, magic effects, and bright surfaces glow.
 - **Vignette** — darken the screen edges with a smooth radial gradient. Adds cinematic atmosphere.
 - **Color grading via LUT** — apply a 3D color lookup table to transform the entire palette. Can simulate film looks (warm vintage, cold horror, etc.).
 - **Per-pixel ambient occlusion approximation** — darken pixels near edges/corners based on local contrast.
+- **Combat readability pass** — color-coded damage flashes, clearer target highlight, smoother disabled action states.
+- **Soft fog / mist overlays** — dither-free atmospheric layers for sectors, spells, and environmental effects.
 
 ### Larger Scope
 - **AI-upscaled texture packs** — extract 8-bit textures from DDL, upscale offline with ESRGAN/Real-ESRGAN, reload as higher-res pixel_t data. With pixel_t palettes, the rendering pipeline already supports direct 32-bit color output.
@@ -167,6 +174,13 @@ With the framebuffer now in 32-bit ARGB (8 bits per channel), the following enha
 2. **32-bit color** (Improvement 1) — foundational for other improvements
 3. **Post-processing** (Improvement 4) — builds on 32-bit color
 4. **AI-upscaled textures** (Improvement 2) — builds on 32-bit color, most complex
+
+## Recommended Next Batch on `visual/32bit-color`
+
+1. **Spell and projectile glows** — the most visible gameplay-facing improvement now that additive and alpha blending helpers exist
+2. **Full-screen mood overlays** — underwater, poison, confusion, lava/heat, and night-vision style grading
+3. **UI panel and selection polish** — translucent panels, cleaner highlights, better hover/disabled states
+4. **Floor/ceiling autofade rewrite** — replace remaining legacy shading math with proper 32-bit blending
 
 ## Notes
 - Each improvement is on its own branch
