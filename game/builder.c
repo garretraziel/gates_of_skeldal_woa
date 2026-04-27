@@ -503,13 +503,14 @@ static void *extractByMask(const short *image, const short *mask_data, int mask)
     if (left > right || top > bottom) return NULL;
     short nxs = right-left+1;
     short nys = bottom-top+1;
-    short *newimg = getmem(nxs*nys*2+3+256);
-    newimg[0] = nxs;
-    newimg[1] = nys;
-    newimg[2] = image[2];
-    memcpy(newimg+2, image+2, sizeof(short)*266);
-    char *imgdata = (char *)(newimg+3+256);
-    const char *srcimgdata = (char *)(image+3+256);
+    char *newimg = getmem(6 + 256*sizeof(pixel_t) + nxs*nys);
+    word *hdr = (word *)newimg;
+    hdr[0] = nxs;
+    hdr[1] = nys;
+    hdr[2] = image[2];
+    memcpy(newimg + 6, (const char *)image + 6, 256*sizeof(pixel_t));
+    char *imgdata = newimg + 6 + 256*sizeof(pixel_t);
+    const char *srcimgdata = (const char *)image + 6 + 256*sizeof(pixel_t);
     for (short y = top; y <= bottom; ++y) {
         for (short x = left; x <= right; ++x) {
             char color = 0;

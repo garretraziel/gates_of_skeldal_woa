@@ -586,7 +586,7 @@ static char go_next_page(int id,int xa,int ya,int xr,int yr)
 
   xa,ya;
   w=ablock(H_GEN_CHARGENM);
-  b=(char *)(w+3+256);
+  b=(char *)w + 6 + 256*sizeof(pixel_t);
   b+=*w*yr+xr;
   if (!*b) return 1;
   id=*b-1;
@@ -931,7 +931,6 @@ char enter_generator()
      }
   return 0;
   }
-
 
 
 
