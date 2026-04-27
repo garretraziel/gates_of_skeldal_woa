@@ -29,20 +29,20 @@ int findMaxDumpNumber(const std::string &directoryPath) {
 }
 
 extern "C" {
-void save_dump(const uint16_t *screen_addr,
+void save_dump(const pixel_t *screen_addr,
         unsigned int width,
         unsigned int height,
         unsigned int linelen);
 }
 
-void save_dump(const uint16_t *screen_addr,
+void save_dump(const pixel_t *screen_addr,
         unsigned int width,
         unsigned int height,
         unsigned int linelen) {
     static int dump_counter = -1;
     FILE *f;
     int i, r, g, b, x, y;
-    const uint16_t *a;
+    const pixel_t *a;
     char c[20];
 
     if (dump_counter == -1) {
@@ -77,13 +77,13 @@ void save_dump(const uint16_t *screen_addr,
     for (i = 4, r = 0; i > 0; i--)
         fwrite(&r, 1, 4, f);
     for (y = height; y > 0; y--) {
-        const uint16_t *scr = screen_addr;
+        const pixel_t *scr = screen_addr;
         a = scr + (y - 1) * linelen;
         for (x = 0; (unsigned int)x < width; x++) {
-            i = a[x];
-            b = (i & 0x1f) << 3;
-            g = (i & 0x7ff) >> 3;
-            r = i >> 8;
+            pixel_t px = a[x];
+            b = PIXEL_BLUE(px);
+            g = PIXEL_GREEN(px);
+            r = PIXEL_RED(px);
             i = ((r * 256) + g) * 256 + b;
             fwrite(&i, 1, 3, f);
         }

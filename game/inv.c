@@ -116,7 +116,7 @@ void place_human_item(word *obrazek,int x,int y,int item)
   const word *p;
 
   p=ablock(item);
-  put_picture2picture(p,obrazek,PO_XSS-p[0]/2+x,PO_YS-p[1]-y-20);
+  put_picture2picture((const pixel_t *)p,(pixel_t *)obrazek,PO_XSS-p[0]/2+x,PO_YS-p[1]-y-20);
   }
 
 /*
@@ -1233,7 +1233,7 @@ void *build_items_wearing(THUMAN *h, int32_t *s)
   *s = siz;
   ob[0]=PO_XS;
   ob[1]=PO_YS;
-  put_picture2picture(p,ob,PO_XSS-(hx/2),PO_YS-hy-20);
+  put_picture2picture((const pixel_t *)p,(pixel_t *)ob,PO_XSS-(hx/2),PO_YS-hy-20);
   for(i=1;i<HUMAN_PLACES;i++)
      if ((it=h->wearing[i])!=0)
         {

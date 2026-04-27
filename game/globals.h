@@ -672,7 +672,7 @@ void bott_draw(char);
 const void *bott_draw_proc(const void *p, int32_t *s, int h);
 void mouse_set_default(int cursor);
 void create_frame(int x,int y,int xs,int ys,char clear);
-void save_dump(const uint16_t *screen_addr,
+void save_dump(const pixel_t *screen_addr,
         unsigned int width,
         unsigned int height,
         unsigned int linelen);

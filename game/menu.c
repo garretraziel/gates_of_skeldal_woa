@@ -130,7 +130,6 @@ static const void *nahraj_rozdilovy_pcx(const void *pp, int32_t *s, int h)
   char *org,*pos;
   char *vysl;
   word *size;
-  const word *paltab;
   const void *origin;
   int siz;
 
@@ -662,4 +661,3 @@ void konec_hry(void)
   timer=get_timer_value();
   while (get_timer_value()-timer<150) task_sleep();
   }
-

@@ -19,7 +19,6 @@ set(all_libs
     skeldal_libs 
     skeldal_platform
     skeldal_sdl
-    skeldal_libs
      ${SDL2_LIBRARIES}
      ${STANDARD_LIBRARIES})
      

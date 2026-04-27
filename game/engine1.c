@@ -1250,7 +1250,7 @@ void draw_enemy(DRW_ENEMY *drw)
   {
     pixel_t *p=(pixel_t *)alloca(SHADE_PAL);
     int i;
-    for (i=0;i<SHADE_PAL/sizeof(pixel_t);i++)
+    for (i=0;i<(int)(SHADE_PAL/sizeof(pixel_t));i++)
     {
       pixel_t col=drw->palette[0][i];
       int bw=(PIXEL_RED(col)+PIXEL_GREEN(col)+PIXEL_BLUE(col))/3;

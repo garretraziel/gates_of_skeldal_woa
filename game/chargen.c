@@ -279,9 +279,9 @@ static void zobraz_perlu(void)
   {
     const word *perla;
   int x,y;
-  word *scr,*sss;
+  pixel_t *scr,*sss;
   char *p;
-  const word *b;
+  const pixel_t *b;
   int xs,ys,xxs;
 
   int32_t scr_linelen2 = GetScreenPitch();
@@ -296,8 +296,8 @@ static void zobraz_perlu(void)
   xs=perla[0];ys=perla[1];
   get_picture(x,y,xs,ys,pod_perlou);
   sss=x+scr_linelen2*y+GetScreenAdr();
-  p=(char *)(perla+256+3);
-  b=perla+3;
+  p=(char *)perla+6+256*sizeof(pixel_t);
+  b=(const pixel_t *)((const char *)perla+6);
   for(;ys>0;ys--)
      {
      scr=sss;
@@ -931,7 +931,6 @@ char enter_generator()
      }
   return 0;
   }
-
 
 
 
