@@ -151,10 +151,6 @@ public:
         sz = res - data;
     }
 
-    constexpr operator std::basic_string_view<unsigned char>() const {
-        return {data, sz};
-    }
-
     operator std::string_view() const {
         return {reinterpret_cast<const char *>(data), sz};
     }
@@ -171,5 +167,4 @@ protected:
 
 template<std::size_t N>
 binary_data(const char (&)[N]) -> binary_data<N>;
-
 

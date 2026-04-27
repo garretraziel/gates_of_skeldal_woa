@@ -773,7 +773,7 @@ static void enter_reaction(EVENT_MSG *msg,void **unused)
   if (msg->msg==E_KEYBOARD)
      {
       int c = va_arg(msg->data, int);
-      if ((c >> 1) == 1 || c == E_QUIT_GAME_KEY) {
+      if ((c >> 8) == 1 || c == E_QUIT_GAME_KEY) {
           gen_exit_editor(2,0,0,0,0);
           return;
       } else if ((c & 0xFF)==13 && !shut_downing_text)
@@ -790,7 +790,7 @@ static void enter_reaction(EVENT_MSG *msg,void **unused)
 static void enter_reaction2(EVENT_MSG *msg,void **_)
   {
   int c = va_arg(msg->data, int);
-  if ((c >> 1) == 1 || c == E_QUIT_GAME_KEY) {
+  if ((c >> 8) == 1 || c == E_QUIT_GAME_KEY) {
       gen_exit_editor(1,0,0,0,0);
       return;
   }
@@ -931,9 +931,6 @@ char enter_generator()
      }
   return 0;
   }
-
-
-
 
 
 

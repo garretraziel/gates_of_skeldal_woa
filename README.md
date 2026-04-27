@@ -40,6 +40,24 @@ cmake ..
 make all
 ```
 
+### macOS (Apple Silicon or Intel)
+
+Install dependencies with Homebrew:
+
+```bash
+brew install cmake sdl2
+```
+
+Configure and build:
+
+```bash
+mkdir build-macos && cd build-macos
+cmake .. -DCMAKE_BUILD_TYPE=Release
+cmake --build . --config Release
+```
+
+On Apple Silicon, the produced binary is native `arm64`. Steamworks is optional and is normally left disabled on macOS unless you provide a compatible SDK manually.
+
 ### Windows (x64)
 
 ```bat
@@ -85,6 +103,56 @@ $ ./skeldal -f conf/skeldal.ini
 ```
 
 The documentation of the configuration file is in the file.
+
+### macOS runtime layout
+
+The game expects `skeldal.ini` in the current working directory, and all relative paths in the config are resolved from the current working directory after `root` is applied.
+
+One working layout on macOS is:
+
+```text
+run/
+  skeldal
+  skeldal.ini
+  data/
+    SKELDAL.DDL
+    ENDTEXT.ENC
+    POPISY.ENC
+    TITULKY.ENC
+    maps/
+    music/
+    video/
+    lang/
+```
+
+Example `skeldal.ini`:
+
+```ini
+[paths]
+root=./data
+maps=maps
+video=video
+data=.
+lang=lang
+music=music
+
+[video]
+fullscreen=off
+window_width=1280
+window_height=960
+crt_filter=none
+scale_quality=auto
+composer=auto
+aspect_ratio=4:3
+cursor_size=100
+```
+
+Then launch it from that runtime directory:
+
+```bash
+cd run
+./skeldal
+```
 
 ### Fix scripting bug in BILA_VEZ.MAP (White Tower)
 

@@ -4,14 +4,13 @@
 
 static std::string get_default_savegame_dir() {
 
-    // Linux
-       char* home = std::getenv("HOME");
-       if (home) {
-           return std::filesystem::path(home) / ".local/share/" SAVEGAME_FOLDERNAME;
-       } else {
-           display_error("$HOME has no value (user with no home)");
-           abort();
-       }
+    char *home = std::getenv("HOME");
+    if (home) {
+        return std::filesystem::path(home) / "Library/Application Support" / SAVEGAME_FOLDERNAME;
+    } else {
+        display_error("$HOME has no value (user with no home)");
+        abort();
+    }
 }
 
 

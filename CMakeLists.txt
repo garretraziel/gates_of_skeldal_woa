@@ -37,6 +37,9 @@ if (MSVC)
 else()
     add_compile_options(-Wall -Wextra -Werror -Wno-unused-result -Wno-unused-parameter -Wno-unused-value -Wno-extern-c-compat -funsigned-char)
     set(STANDARD_LIBRARIES "pthread")
+    if(APPLE)
+        add_compile_options(-Wno-deprecated-declarations)
+    endif()
 endif()
 
 
@@ -86,4 +89,3 @@ add_subdirectory(libs)
 add_subdirectory(platform)
 add_subdirectory(game)
 add_subdirectory(tools)
-

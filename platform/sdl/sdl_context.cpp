@@ -297,7 +297,6 @@ int SDLContext::init_window(const VideoConfig &config, const char *title, std::f
     // Shadow buffer allocated lazily on first use
     // _shadow_buffer.resize(640 * 480, 0);
 
-    std::atomic<bool> done = false;
     std::exception_ptr e;
     std::string_view stage;
     std::string rname;
