@@ -752,7 +752,6 @@ void draw_floor_ceil(int celx,int cely,char f_c,const void *txtr)
   if (nofloors) return;
 
   // Lateral shift for floors/ceilings: use cell width at depth cely+1 to match wall shift
-  // (x_table[0][cely].point_total = vp[1][0][cely+1] - vp[0][0][cely+1])
   if (render_lateral_phase != 0.0f && cely < VIEW3D_Z) {
      int cell_width = viewport_geometry[1][0][cely+1].x - viewport_geometry[0][0][cely+1].x;
      shift_px = (int)lroundf(render_lateral_phase * (float)cell_width * 0.5f);
