@@ -23,10 +23,6 @@ static float render_lateral_phase = 0.0f;
 static int render_lateral_stage = 0;
 static char backgrnd_mode=0;
 
-// Floor pixel mask for lateral sidestep compositing
-uint8_t floor_mask[VIEW_SIZE_X * VIEW_SIZE_Y];
-int floor_mask_active = 0;
-
 static int lclip,rclip;
 
 ZOOMINFO zoom;
@@ -627,12 +623,7 @@ void show_cel(int celx,int cely,const void *stena,int xofs,int yofs,char rev, in
      }
   else realsx=txtsx*x3d->point_total/TXT_SIZE_X_3D;
   realsy=txtsy*yd->vert_size/TXT_SIZE_Y-1;
-  {
-  // Use uniform cell width (from x_table) instead of per-wall z_table width
-  // to prevent stretching between wall segments at different lateral positions
-  int cell_width = showtabs.x_table[0][cely].point_total;
-  x=x3d->xpos+xofs+phase_dir*(int)lroundf(render_lateral_phase * (float)cell_width * 0.5f);
-  }
+  x=x3d->xpos+xofs+phase_dir*(int)lroundf(render_lateral_phase * (float)showtabs.x_table[0][cely].point_total * 0.5f);
   if (-x>realsx) return;
   p=stena;p+=SHADE_PAL+2*2+2;
   zoom.texture_end = p + txtsx*txtsy;
@@ -760,7 +751,8 @@ void draw_floor_ceil(int celx,int cely,char f_c,const void *txtr)
 
   if (nofloors) return;
 
-  // Lateral shift for floors/ceilings: match wall shift at the far depth boundary
+  // Lateral shift for floors/ceilings: use cell width at depth cely+1 to match wall shift
+  // (x_table[0][cely].point_total = vp[1][0][cely+1] - vp[0][0][cely+1])
   if (render_lateral_phase != 0.0f && cely < VIEW3D_Z) {
      int cell_width = viewport_geometry[1][0][cely+1].x - viewport_geometry[0][0][cely+1].x;
      shift_px = (int)lroundf(render_lateral_phase * (float)cell_width * 0.5f);
@@ -985,20 +977,14 @@ void set_render_lateral_stage(int stage)
   render_lateral_stage = stage;
   }
 
-void floor_mask_begin(void)
+int get_render_lateral_stage(void)
   {
-  memset(floor_mask, 0, sizeof(floor_mask));
-  floor_mask_active = 1;
+  return render_lateral_stage;
   }
 
-void floor_mask_end(void)
+float get_render_lateral_phase(void)
   {
-  floor_mask_active = 0;
-  }
-
-const uint8_t *get_floor_mask(void)
-  {
-  return floor_mask;
+  return render_lateral_phase;
   }
 
 void general_engine_init()

@@ -1318,6 +1318,60 @@ void render_scene(int sector, int smer)
 
         p=minimap[i];
         left_shiftup=0;right_shiftup=0;
+
+        // Pre-draw adjacent column's floor at the outermost position (unshifted)
+        // so it fills the gap when the main content shifts away.
+        // Find the outermost populated column and get its lateral neighbor.
+        {
+        float lat_phase = get_render_lateral_phase();
+        if (lat_phase != 0.0f) {
+           word adj_sector = 0;
+           word outer_sector = 0;
+           if (lat_phase > 0.0f) {
+              // Phase positive = content shifts right = gap on LEFT
+              // Need left neighbor of outermost LEFT column
+              int j2;
+              for (j2 = VIEW3D_X - 1; j2 >= 0; j2--) {
+                 word outer = p[VIEW3D_X - j2];
+                 if (outer) {
+                    adj_sector = map_sectors[outer].step_next[dirs[0]];
+                    outer_sector = outer;
+                    break;
+                 }
+              }
+           } else {
+              // Phase negative = content shifts left = gap on RIGHT
+              // Need right neighbor of outermost RIGHT column
+              int j2;
+              for (j2 = VIEW3D_X - 1; j2 >= 0; j2--) {
+                 word outer = p[VIEW3D_X + j2];
+                 if (outer) {
+                    adj_sector = map_sectors[outer].step_next[dirs[2]];
+                    outer_sector = outer;
+                    break;
+                 }
+              }
+           }
+           word fill_sector = adj_sector ? adj_sector : outer_sector;
+           if (fill_sector) {
+              float saved_phase = lat_phase;
+              set_render_lateral_phase(0.0f);
+              // Draw adjacent floor at multiple celx positions to fill the full gap
+              int fc;
+              if (lat_phase < 0.0f) {
+                 // Gap on right: fill all right-side positions
+                 for (fc = 0; fc <= VIEW3D_X - 1; fc++)
+                    draw_basic_floor(fc, i, fill_sector);
+              } else {
+                 // Gap on left: fill all left-side positions
+                 for (fc = 0; fc <= VIEW3D_X - 1; fc++)
+                    draw_basic_floor(-fc, i, fill_sector);
+              }
+              set_render_lateral_phase(saved_phase);
+           }
+        }
+        }
+
         for(j=VIEW3D_X-1;j>=0;j--)
            {
            int s2;

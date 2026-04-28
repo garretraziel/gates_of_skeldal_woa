@@ -1434,8 +1434,8 @@ void shift_zoom(char smer, int src_sector, int dst_sector)
              float phase;
              float dir=(smer & 3)==1?1.0f:-1.0f;
              float local;
-             const float blend_start = 0.0f;
-             const float blend_end = 1.0f;
+             const float blend_start = 0.42f;
+             const float blend_end = 0.58f;
 
              if (!zoom_speed(-1)) break;
              do

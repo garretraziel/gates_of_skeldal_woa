@@ -49,9 +49,8 @@ void draw_item2(int celx,int cely,int xpos,int ypos,const void *texture,int inde
 void clear_buff(pixel_t *background,pixel_t backcolor,int lines);
 void set_render_lateral_phase(float phase);
 void set_render_lateral_stage(int stage);
-void floor_mask_begin(void);
-void floor_mask_end(void);
-const uint8_t *get_floor_mask(void);
+float get_render_lateral_phase(void);
+int get_render_lateral_stage(void);
 
 typedef struct zoominfo
   {
