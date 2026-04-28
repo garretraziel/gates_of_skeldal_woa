@@ -1069,7 +1069,7 @@ int init_skeldal_thread(va_list args) {
 }
 
 
-int init_skeldal(const INI_CONFIG *cfg, void (*game_thread)(va_list), ...)
+int init_skeldal(const INI_CONFIG *cfg, int (*game_thread)(va_list), ...)
   {
   boldcz=LoadDefaultFont();
 
@@ -1731,13 +1731,13 @@ int skeldal_gen_string_table_entry_point(const SKELDAL_CONFIG *start_cfg, const 
     return 0;
 }
 
-void skeldal_entry_point_thread(va_list _) {
+int skeldal_entry_point_thread(va_list _) {
     int start_task = add_task(65536,start);
 
     escape();
 
     term_task_wait(start_task);
-    return;
+    return 0;
 }
 
 int skeldal_entry_point(const SKELDAL_CONFIG *start_cfg)
