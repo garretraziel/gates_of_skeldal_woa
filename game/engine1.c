@@ -23,6 +23,10 @@ static float render_lateral_phase = 0.0f;
 static int render_lateral_stage = 0;
 static char backgrnd_mode=0;
 
+// Floor pixel mask for lateral sidestep compositing
+uint8_t floor_mask[VIEW_SIZE_X * VIEW_SIZE_Y];
+int floor_mask_active = 0;
+
 static int lclip,rclip;
 
 ZOOMINFO zoom;
@@ -979,6 +983,22 @@ void set_render_lateral_phase(float phase)
 void set_render_lateral_stage(int stage)
   {
   render_lateral_stage = stage;
+  }
+
+void floor_mask_begin(void)
+  {
+  memset(floor_mask, 0, sizeof(floor_mask));
+  floor_mask_active = 1;
+  }
+
+void floor_mask_end(void)
+  {
+  floor_mask_active = 0;
+  }
+
+const uint8_t *get_floor_mask(void)
+  {
+  return floor_mask;
   }
 
 void general_engine_init()

@@ -1516,26 +1516,13 @@ static void blend_scene_buffers_to_screen(unsigned int alpha)
   int32_t pitch = GetScreenPitch();
   pixel_t *screen = GetScreenAdr()+SCREEN_OFFSET;
   pixel_t *scene = GetBuffer2nd()+SCREEN_OFFSET;
-  pixel_t bg = (pixel_t)back_color;
   int x,y;
 
   for (y=0;y<VIEW_SIZE_Y;y++)
      {
      pixel_t *dst = screen + y*pitch;
      pixel_t *src = scene + y*pitch;
-     for (x=0;x<VIEW_SIZE_X;x++) {
-        if (src[x] == bg) {
-           // Destination is background: keep source pixel
-           continue;
-        }
-        if (dst[x] == bg) {
-           // Source was background: use destination directly
-           dst[x] = src[x];
-        } else {
-           // Both have content: alpha blend
-           dst[x] = pixel_blend_alpha(dst[x], src[x], alpha);
-        }
-     }
+     for (x=0;x<VIEW_SIZE_X;x++) dst[x] = pixel_blend_alpha(dst[x], src[x], alpha);
      }
   }
 

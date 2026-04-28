@@ -93,7 +93,11 @@ void fcdraw(const void *source,void *target, const void *table, int shift_near, 
 		pixel_t *tt = t->lineofs/sizeof(pixel_t)+trg;
 		cc = t->linesize;
 
+		// Always draw unshifted first (fills gaps between shifted floor tiles)
+		memcpy(tt, ss, cc * sizeof(pixel_t));
+
 		if (shift_px != 0) {
+			// Draw shifted on top (correct position overwrites the gap-fill)
 			int pixel_ofs = (int)(t->lineofs / sizeof(pixel_t));
 			int x_in_line = pixel_ofs % 640;
 			int new_x = x_in_line + shift_px;
@@ -112,8 +116,6 @@ void fcdraw(const void *source,void *target, const void *table, int shift_near, 
 				pixel_t *tt_shifted = tt + shift_px + skip;
 				memcpy(tt_shifted, ss + skip, count * sizeof(pixel_t));
 			}
-		} else {
-			memcpy(tt,ss,cc*sizeof(pixel_t));
 		}
 
 		cc = t->counter;
