@@ -1398,6 +1398,7 @@ void render_scene(int sector, int smer)
               draw_sector(-j,i,s);
               }
            }
+
         for(j=VIEW3D_X-1;j>=0;j--)
            {
            if ((s=p[VIEW3D_X+j])!=0)

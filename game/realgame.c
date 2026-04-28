@@ -1429,13 +1429,13 @@ void shift_zoom(char smer, int src_sector, int dst_sector)
      case 3:
              {
              int32_t tmp=get_timer_value();
-             int maxtime=7*zoom_speed(-1);
+             int maxtime=12*zoom_speed(-1);
              int curtime;
              float phase;
              float dir=(smer & 3)==1?1.0f:-1.0f;
              float local;
-             const float blend_start = 0.42f;
-             const float blend_end = 0.58f;
+             const float blend_start = 0.5f;
+             const float blend_end = 0.5f;
 
              if (!zoom_speed(-1)) break;
              do
