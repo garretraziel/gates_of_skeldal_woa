@@ -4,6 +4,7 @@
 #include <libs/bgraph.h>
 
 #include <string.h>
+#include <math.h>
 
 typedef ZOOMINFO tzoom;
 
@@ -75,7 +76,7 @@ SIKMA_STENA(alpha,*scr_iter = BLEND_PIXELS(*scr_iter, palette[pb]))
 
 	//;
 
-void fcdraw(const void *source,void *target, const void *table)
+void fcdraw(const void *source,void *target, const void *table, int shift_near, int shift_far)
 //#pragma aux fcdraw parm [EDX][EBX][EAX] modify [ECX ESI EDI];
 {
 
@@ -84,11 +85,37 @@ void fcdraw(const void *source,void *target, const void *table)
 	T_FLOOR_MAP *t = (T_FLOOR_MAP *)table;
 	uint32_t cc;
 
+	// Use a single uniform shift (average of near and far)
+	int shift_px = (shift_near + shift_far) / 2;
+
 	do {
 		pixel_t *ss = t->txtrofs/sizeof(pixel_t)+src;
 		pixel_t *tt = t->lineofs/sizeof(pixel_t)+trg;
 		cc = t->linesize;
-		memcpy(tt,ss,cc*sizeof(pixel_t));
+
+		if (shift_px != 0) {
+			int pixel_ofs = (int)(t->lineofs / sizeof(pixel_t));
+			int x_in_line = pixel_ofs % 640;
+			int new_x = x_in_line + shift_px;
+			int skip = 0;
+			int count = (int)cc;
+
+			if (new_x < 0) {
+				skip = -new_x;
+				count -= skip;
+				new_x = 0;
+			}
+			if (new_x + count > 640) {
+				count = 640 - new_x;
+			}
+			if (count > 0) {
+				pixel_t *tt_shifted = tt + shift_px + skip;
+				memcpy(tt_shifted, ss + skip, count * sizeof(pixel_t));
+			}
+		} else {
+			memcpy(tt,ss,cc*sizeof(pixel_t));
+		}
+
 		cc = t->counter;
 		t++;
 	} while (cc != 0);

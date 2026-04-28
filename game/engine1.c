@@ -19,6 +19,8 @@
 
 t_points viewport_geometry;
 struct all_view showtabs;
+static float render_lateral_phase = 0.0f;
+static int render_lateral_stage = 0;
 static char backgrnd_mode=0;
 
 static int lclip,rclip;
@@ -80,7 +82,7 @@ void scroll_support_64(void *lbuf,void *src1,void *src2,int size1,void *xlat);
 //#pragma aux scroll_support_64 parm [EDI][ESI][EDX][ECX][EBX] modify [EAX];
 void scroll_support_64b(void *lbuf,void *src1,void *src2,int size1,void *xlat);
 //#pragma aux scroll_support_64b parm [EDI][ESI][EDX][ECX][EBX] modify [EAX];*/
-void fcdraw(const void *source,void *target,const  void *table);
+void fcdraw(const void *source,void *target,const  void *table, int shift_near, int shift_far);
 //#pragma aux fcdraw parm [EDX][EBX][EAX] modify [ECX ESI EDI];
 
 /*void lodka32(void *source,void *target,void *background,void *xlat,int32_t xysize);
@@ -589,11 +591,15 @@ void show_cel(int celx,int cely,const void *stena,int xofs,int yofs,char rev, in
   int txtsx,txtsy,realsx,realsy,x,i,yss,ysd;
   const char *p;
   int plac;
+  int raw_rev;
+  int phase_dir;
 
   int32_t scr_linelen2 = GetScreenPitch();
 
   plac=rev>>5;
   rev&=3;
+  raw_rev=rev;
+  phase_dir=(celx<0 || raw_rev==2)?1:-1;
   if (celx<=0) x3d=&showtabs.z_table[-celx][cely]; else  x3d=&showtabs.z_table[celx][cely];
   x0d=&showtabs.z_table[0][cely];
   if (!x3d->used) return;
@@ -617,7 +623,12 @@ void show_cel(int celx,int cely,const void *stena,int xofs,int yofs,char rev, in
      }
   else realsx=txtsx*x3d->point_total/TXT_SIZE_X_3D;
   realsy=txtsy*yd->vert_size/TXT_SIZE_Y-1;
-  x=x3d->xpos+xofs;
+  {
+  // Use uniform cell width (from x_table) instead of per-wall z_table width
+  // to prevent stretching between wall segments at different lateral positions
+  int cell_width = showtabs.x_table[0][cely].point_total;
+  x=x3d->xpos+xofs+phase_dir*(int)lroundf(render_lateral_phase * (float)cell_width * 0.5f);
+  }
   if (-x>realsx) return;
   p=stena;p+=SHADE_PAL+2*2+2;
   zoom.texture_end = p + txtsx*txtsy;
@@ -691,6 +702,10 @@ void show_cel2(int celx,int cely,const void *stena,int xofs,int yofs,char rev, i
   realsx=txtsx*x3d->point_total/TXT_SIZE_X;
   realsy=txtsy*yd->vert_size/TXT_SIZE_Y;
   if (celx<=0) x=x3d->xpos+xofs; else x=x3d->xpos2+xofs;
+  {
+  int phase_dir2 = (rev == 2) ? -1 : 1;
+  x += phase_dir2 * (int)lroundf(render_lateral_phase * (float)x3d->point_total * 0.5f);
+  }
   if (-x>realsx) return;
   p=stena;p+=SHADE_PAL+2*2+2;
   zoom.texture_end = p + txtsx*txtsy;
@@ -737,31 +752,29 @@ void show_cel2(int celx,int cely,const void *stena,int xofs,int yofs,char rev, i
 void draw_floor_ceil(int celx,int cely,char f_c,const void *txtr)
   {
   int y;
+  int shift_px = 0;
 
   if (nofloors) return;
+
+  // Lateral shift for floors/ceilings: match wall shift at the far depth boundary
+  if (render_lateral_phase != 0.0f && cely < VIEW3D_Z) {
+     int cell_width = viewport_geometry[1][0][cely+1].x - viewport_geometry[0][0][cely+1].x;
+     shift_px = (int)lroundf(render_lateral_phase * (float)cell_width * 0.5f);
+  }
+
   txtr=(void *)((word *)txtr+3);
   if (f_c==0) //podlaha
      {
      y=(VIEW_SIZE_Y-MIDDLE_Y)-viewport_geometry[0][0][cely].y+1;
      if (y<1) y=1;
      txtr=(void *)((word *)txtr);
-     fcdraw(txtr,GetBuffer2nd()+SCREEN_OFFSET,&showtabs.f_table[celx+3][y]);
-/*     if (debug)
-        {
-         memcpy(GetScreenAdr(),GetBuffer2nd(),512000);
-         showview(0,0,0,0);
-        }*/
+     fcdraw(txtr,GetBuffer2nd()+SCREEN_OFFSET,&showtabs.f_table[celx+3][y],shift_px,shift_px);
      }
   else
      {
      y=viewport_geometry[0][1][cely].y+MIDDLE_Y+1;
      if (y<0) y=0;
-     fcdraw(txtr,GetBuffer2nd()+SCREEN_OFFSET,&showtabs.c_table[celx+3][y]);
-/*     if (debug)
-        {
-         memcpy(GetScreenAdr(),GetBuffer2nd(),512000);
-         showview(0,0,0,0);
-        }*/
+     fcdraw(txtr,GetBuffer2nd()+SCREEN_OFFSET,&showtabs.c_table[celx+3][y],shift_px,shift_px);
      }
 
   }
@@ -958,6 +971,16 @@ void clear_screen(pixel_t *screen, pixel_t color)
 for (int i=0;i<480;i++) clear_color(screen+scr_linelen2*i,640,color);
 }
 
+void set_render_lateral_phase(float phase)
+  {
+  render_lateral_phase = phase;
+  }
+
+void set_render_lateral_stage(int stage)
+  {
+  render_lateral_stage = stage;
+  }
+
 void general_engine_init()
   {
   calc_points();
@@ -987,6 +1010,7 @@ void map_pos(int celx,int cely,int posx,int posy,int posz,int *x,int *y)
   else xl=-xr;
   *x=xl+((xr-xl)*posx/CTVR);
   if (negate2) *x=-*x;
+  *x+=(int)lroundf(render_lateral_phase * (float)(xr-xl) * 0.5f);
   *x+=MIDDLE_X;
   *y+=MIDDLE_Y;
   }

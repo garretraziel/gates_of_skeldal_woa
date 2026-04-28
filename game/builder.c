@@ -83,6 +83,8 @@ char anim_mirror=0;
 static char showrune=0;
 static int showruneitem=0;
 static char lodka_loaded=0;
+extern char death_play;
+extern char far_play;
 
 
 
@@ -97,6 +99,39 @@ char log_combat=0;
 
 SPECTXT_ARR spectxtr;
 static char spt_ptr=0;
+
+static void draw_portrait_frame(int x, int y, int xs, int ys, pixel_t color, unsigned int edge_alpha)
+  {
+  int32_t pitch = GetScreenPitch();
+  pixel_t *screen = GetScreenAdr();
+  int xx, yy;
+
+  if (x < 1 || y < 1 || x + xs >= DxGetResX() - 1 || y + ys >= DxGetResY() - 1) return;
+
+  for (xx = x; xx < x + xs; ++xx)
+     {
+     pixel_t *top = screen + y * pitch + xx;
+     pixel_t *bottom = screen + (y + ys - 1) * pitch + xx;
+     *top = pixel_blend_alpha(*top, color, 224);
+     *bottom = pixel_blend_alpha(*bottom, color, 224);
+     top[-pitch] = pixel_additive(top[-pitch], color, edge_alpha / 2);
+     top[pitch] = pixel_additive(top[pitch], color, edge_alpha);
+     bottom[-pitch] = pixel_additive(bottom[-pitch], color, edge_alpha);
+     bottom[pitch] = pixel_additive(bottom[pitch], color, edge_alpha / 2);
+     }
+
+  for (yy = y; yy < y + ys; ++yy)
+     {
+     pixel_t *left = screen + yy * pitch + x;
+     pixel_t *right = screen + yy * pitch + (x + xs - 1);
+     *left = pixel_blend_alpha(*left, color, 224);
+     *right = pixel_blend_alpha(*right, color, 224);
+     left[-1] = pixel_additive(left[-1], color, edge_alpha / 2);
+     left[1] = pixel_additive(left[1], color, edge_alpha);
+     right[-1] = pixel_additive(right[-1], color, edge_alpha);
+     right[1] = pixel_additive(right[1], color, edge_alpha / 2);
+     }
+  }
 
 
 void add_spectxtr(word sector,word fhandle,word count,word repeat,integer xpos)
@@ -370,7 +405,13 @@ static const void *bott_draw_normal(const void *pp, int32_t *s)
 			c[0]+=4;set_aligned_position(x+10,86,0,2,c);outtext(c);
 		  }
         }
-     if (i==select_player) rectangle(x+3,12,x+3+54,12+75,SEL_COLOR);
+     if (battle && default_ms_cursor==H_MS_WHO && can_select_player(p, death_play, far_play))
+        draw_portrait_frame(PIC_X+x, PIC_Y, 54, 75, RGB888(96,196,255), 56);
+     if (i==select_player)
+        {
+        draw_portrait_frame(PIC_X+x, PIC_Y, 54, 75, RGB888(255,228,140), 88);
+        rectangle(x+3,12,x+3+54,12+75,SEL_COLOR);
+        }
      if (p->dostal)
         {
         char s[20];

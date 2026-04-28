@@ -93,6 +93,8 @@ int start_dialog_number=0;
 int start_dialog_mob=0;
 uint32_t current_map_hash;
 
+static void blend_scene_buffers_to_screen(unsigned int alpha);
+
 int32_t money=0;
 
 char runes[5]={0,0,0,0,0};
@@ -1414,7 +1416,7 @@ char chod_s_postavama(char sekupit)
   return gatt;
   }
 
-void shift_zoom(char smer)
+void shift_zoom(char smer, int src_sector, int dst_sector)
   {
   if (cancel_pass) return;
   hold_timer(TM_BACK_MUSIC,1);
@@ -1423,11 +1425,79 @@ void shift_zoom(char smer)
      case 0:if (lodka)zooming_forward(ablock(H_LODKA));
              else zooming_forward(ablock(H_BGR_BUFF));
      break;
-     case 1:turn_left();break;
+     case 1:
+     case 3:
+             {
+             int32_t tmp=get_timer_value();
+             int maxtime=7*zoom_speed(-1);
+             int curtime;
+             float phase;
+             float dir=(smer & 3)==1?1.0f:-1.0f;
+             float local;
+             const float blend_start = 0.0f;
+             const float blend_end = 1.0f;
+
+             if (!zoom_speed(-1)) break;
+             do
+               {
+               curtime=get_timer_value()-tmp;
+               phase=(curtime)*(1.0f/(float)maxtime);
+               if (phase > 1.0f) phase = 1.0f;
+               phase = phase * phase * (3.0f - 2.0f * phase);
+               if (phase < blend_start)
+                  {
+                  local=phase*(1.0f/blend_start);
+                  local = local * local * (3.0f - 2.0f * local);
+                  set_render_lateral_stage(-1);
+                  set_render_lateral_phase(-dir*local);
+                  render_scene(src_sector,viewdir);
+                  OutBuffer2nd();
+                  }
+               else if (phase > blend_end)
+                  {
+                  local=(phase-blend_end)*(1.0f/(1.0f-blend_end));
+                  local = local * local * (3.0f - 2.0f * local);
+                  set_render_lateral_stage(1);
+                  set_render_lateral_phase(dir*(1.0f-local));
+                  render_scene(dst_sector,viewdir);
+                  OutBuffer2nd();
+                  }
+               else
+                  {
+                  float mix=(phase-blend_start)*(1.0f/(blend_end-blend_start));
+                  unsigned int alpha=(unsigned int)(mix*255.0f);
+
+                  local=phase*(1.0f/blend_end);
+                  if (local > 1.0f) local = 1.0f;
+                  local = local * local * (3.0f - 2.0f * local);
+                  set_render_lateral_stage(-1);
+                  set_render_lateral_phase(-dir*local);
+                  render_scene(src_sector,viewdir);
+                  OutBuffer2nd();
+
+                  local=(phase-blend_start)*(1.0f/(1.0f-blend_start));
+                  if (local < 0.0f) local = 0.0f;
+                  if (local > 1.0f) local = 1.0f;
+                  local = local * local * (3.0f - 2.0f * local);
+                  set_render_lateral_stage(1);
+                  set_render_lateral_phase(dir*(1.0f-local));
+                  render_scene(dst_sector,viewdir);
+                  blend_scene_buffers_to_screen(alpha);
+                  }
+               if (battle || (game_extras & EX_ALWAYS_MINIMAP)) draw_medium_map();
+               sort_groups();
+               bott_draw(0);
+               other_draw();
+               showview(0,0,0,0);
+               }
+             while (curtime<maxtime);
+             set_render_lateral_phase(0.0f);
+             set_render_lateral_stage(0);
+             }
+     break;
      case 2:if (lodka)zooming_backward(ablock(H_LODKA));
              else zooming_backward(ablock(H_BGR_BUFF));
      break;
-     case 3:turn_right();break;
      }
   hold_timer(TM_BACK_MUSIC,0);
   }
@@ -1438,6 +1508,21 @@ void hide_ms_at(int line)
      {
      update_mysky();
      schovej_mysku();
+     }
+  }
+
+static void blend_scene_buffers_to_screen(unsigned int alpha)
+  {
+  int32_t pitch = GetScreenPitch();
+  pixel_t *screen = GetScreenAdr()+SCREEN_OFFSET;
+  pixel_t *scene = GetBuffer2nd()+SCREEN_OFFSET;
+  int x,y;
+
+  for (y=0;y<VIEW_SIZE_Y;y++)
+     {
+     pixel_t *dst = screen + y*pitch;
+     pixel_t *src = scene + y*pitch;
+     for (x=0;x<VIEW_SIZE_X;x++) dst[x] = pixel_blend_alpha(dst[x], src[x], alpha);
      }
   }
 
@@ -1689,7 +1774,7 @@ void step_zoom(char smer)
      sort_groups();
      bott_draw(0);
      other_draw();
-    if (!nopass) shift_zoom(smer);
+    if (!nopass) shift_zoom(smer,sect,viewsector);
     if (battle || (game_extras & EX_ALWAYS_MINIMAP)) draw_medium_map();
     sort_groups();
     bott_draw(0);
@@ -2035,5 +2120,3 @@ int postavy_propadnout(int sector)
      }
   return z;
   }
-
-
