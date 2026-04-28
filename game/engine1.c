@@ -331,7 +331,7 @@ void create_tables(void)
      {
      int rozdil1,rozdil2;
 
-     if (x && viewport_geometry[x-1][0][y].x>TXT_SIZE_X) showtabs.z_table[x][y].used=0;
+     if (x && viewport_geometry[x-1][0][y].x>TXT_SIZE_X) showtabs.x_table[x][y].used=0;
      else
        {
         showtabs.x_table[x][y].used=1;
