@@ -747,24 +747,28 @@ void SDLContext::event_loop(std::stop_token stp) {
 
 
     SDL_Event e;
-    while (true) {
+    while (!stp.stop_requested()) {
         // Use timeout-based wait so deferred touch gestures (e.g. long-press)
         // can fire even when the user holds a finger still.
         int wait_ms = -1;
-        if (_touch_enabled) {
+        if (_touch_enabled && !stp.stop_requested()) {
             int dl = _touch_input.next_deadline_ms(SDL_GetTicks());
             if (dl >= 0) wait_ms = dl;
         }
-        bool got = (wait_ms < 0) ? (SDL_WaitEvent(&e) != 0)
-                                 : (SDL_WaitEventTimeout(&e, wait_ms) != 0);
-        if (!got) {
-            // Timeout: dispatch any deferred touch events (long-press) and continue.
-            if (_touch_enabled) {
-                auto evs = _touch_input.tick(SDL_GetTicks());
-                if (!evs.empty()) apply_touch_events(evs);
+        if (wait_ms < 0) {
+            if (SDL_WaitEvent(&e) == 0) break;   // error -> bail (matches original)
+        } else {
+            int r = SDL_WaitEventTimeout(&e, wait_ms);
+            if (r == 0) {
+                // Timeout: dispatch deferred touch events (long-press) and continue.
+                if (_touch_enabled && !stp.stop_requested()) {
+                    auto evs = _touch_input.tick(SDL_GetTicks());
+                    if (!evs.empty()) apply_touch_events(evs);
+                }
+                continue;
             }
-            continue;
         }
+        if (stp.stop_requested()) break;
         SDL_Scancode kbdevent = {};
         if (e.type == SDL_QUIT) {
             _quit_requested = true;
@@ -885,7 +889,7 @@ void SDLContext::event_loop(std::stop_token stp) {
             _input_mode = InputMode::mouse;
             if (e.wheel.y > 0) kbdevent =SDL_SCANCODE_UP;
             else if (e.wheel.y < 0) kbdevent =SDL_SCANCODE_DOWN;
-        } else if (_touch_enabled &&
+        } else if (_touch_enabled && _window &&
                    (e.type == SDL_FINGERDOWN || e.type == SDL_FINGERUP || e.type == SDL_FINGERMOTION)) {
             _input_mode = InputMode::touch;
             // Convert normalized 0..1 -> window pixel -> source rect, then clamp.

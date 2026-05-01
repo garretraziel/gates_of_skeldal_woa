@@ -18,42 +18,53 @@ bool TouchInput::over_slop(const FingerState &f) const {
     return (dx*dx + dy*dy) > (_slop_radius * _slop_radius);
 }
 
+// Design notes
+// ============
+// PRESS is emitted at FINGERDOWN, RELEASE at FINGERUP. This mirrors how real
+// mouse events flow (button-down comes ms before button-up, separated in time
+// by the user's finger), so the game thread reliably observes both states
+// instead of collapsing them in MS_EVENT.event_type bit-OR.
+//
+// Long-press = "convert in-flight left to right":
+//   On timer fire we emit LeftRelease, then RightPress. On FINGERUP we emit
+//   RightRelease. The game sees a clean left-down/left-up early followed by a
+//   clean right-down/right-up — close enough to "I right-clicked at this spot."
+//
+// Two-finger tap = same idea: at second FINGERDOWN we close out the current
+// left button and emit a Right press+release pair (the right release is paired
+// with primary's FINGERUP via current_button=Right).
+
 std::vector<TouchSynthEvent> TouchInput::handle_finger_down(SDL_FingerID id,
                                                             int src_x, int src_y,
                                                             uint32_t now_ms) {
     std::vector<TouchSynthEvent> out;
 
-    // Already tracking this id? Defensive: replace state.
     if (auto *existing = find(id)) {
         existing->start_x = existing->current_x = src_x;
         existing->start_y = existing->current_y = src_y;
         existing->down_time_ms = now_ms;
-        existing->dragging = false;
-        existing->consumed = false;
         return out;
     }
 
-    FingerState fs{ id, src_x, src_y, src_x, src_y, now_ms, false, false };
+    FingerState fs{ id, src_x, src_y, src_x, src_y, now_ms, false };
     _fingers.push_back(fs);
 
-    // First finger becomes primary; emit move-to so subsequent UI sees focus there.
+    // First finger becomes primary: emit Move + LeftPress immediately.
     if (_primary_id == -1) {
         _primary_id = id;
-        _long_press_fired = false;
-        _two_finger_fired = false;
-        out.push_back({ TouchSynthEvent::Move, src_x, src_y });
+        _current_button = Button::Left;
+        out.push_back({ TouchSynthEvent::Move,      src_x, src_y });
+        out.push_back({ TouchSynthEvent::LeftPress, src_x, src_y });
         return out;
     }
 
-    // Second finger arriving while primary is active: two-finger right-click.
-    // Suppressed if primary is already dragging (prevents misfire while scrolling).
+    // Second finger arriving while primary holds Left: convert to right-click.
+    // (Suppressed if primary is dragging — avoid misfire while scrolling.)
     auto *primary = find(_primary_id);
-    if (primary && !primary->dragging && !_two_finger_fired && !_long_press_fired) {
-        _two_finger_fired = true;
-        if (primary) primary->consumed = true;
-        out.push_back({ TouchSynthEvent::Move,         primary->current_x, primary->current_y });
-        out.push_back({ TouchSynthEvent::RightPress,   primary->current_x, primary->current_y });
-        out.push_back({ TouchSynthEvent::RightRelease, primary->current_x, primary->current_y });
+    if (primary && _current_button == Button::Left && !primary->dragging) {
+        out.push_back({ TouchSynthEvent::LeftRelease, primary->current_x, primary->current_y });
+        out.push_back({ TouchSynthEvent::RightPress,  primary->current_x, primary->current_y });
+        _current_button = Button::Right;
     }
     return out;
 }
@@ -70,41 +81,39 @@ std::vector<TouchSynthEvent> TouchInput::handle_finger_motion(SDL_FingerID id,
 
     if (id != _primary_id) return out;
 
-    // Promote to drag once over slop; emit motion events while dragging.
+    // Mark drag once over slop (used to disable long-press / two-finger).
     if (!f->dragging && over_slop(*f)) {
         f->dragging = true;
     }
-    if (f->dragging) {
-        out.push_back({ TouchSynthEvent::Move, src_x, src_y });
-    }
+
+    // Always emit Move; this naturally implements drag-while-pressed (scrollbars,
+    // save-list arrow auto-repeat) since the button stays down between events.
+    out.push_back({ TouchSynthEvent::Move, src_x, src_y });
     return out;
 }
 
 std::vector<TouchSynthEvent> TouchInput::handle_finger_up(SDL_FingerID id,
                                                           int src_x, int src_y,
                                                           uint32_t now_ms) {
+    (void)now_ms;
     std::vector<TouchSynthEvent> out;
     auto *f = find(id);
     if (!f) return out;
 
     bool was_primary = (id == _primary_id);
-    bool fired_already = f->consumed || (was_primary && (_long_press_fired || _two_finger_fired));
-    bool is_drag = was_primary && f->dragging;
-    uint32_t held_ms = now_ms - f->down_time_ms;
-
-    // Update position one last time.
     f->current_x = src_x;
     f->current_y = src_y;
 
-    if (was_primary && !fired_already && !is_drag && held_ms <= (uint32_t)_tap_max_ms) {
-        // It's a tap: emit a left press+release pair at the down position.
-        // (Use start position so tiny finger movements don't shift the click.)
-        out.push_back({ TouchSynthEvent::Move,        f->start_x, f->start_y });
-        out.push_back({ TouchSynthEvent::LeftPress,   f->start_x, f->start_y });
-        out.push_back({ TouchSynthEvent::LeftRelease, f->start_x, f->start_y });
+    if (was_primary) {
+        // Final move to release point (in case finger drifted between motions).
+        out.push_back({ TouchSynthEvent::Move, src_x, src_y });
+        if (_current_button == Button::Left) {
+            out.push_back({ TouchSynthEvent::LeftRelease, src_x, src_y });
+        } else if (_current_button == Button::Right) {
+            out.push_back({ TouchSynthEvent::RightRelease, src_x, src_y });
+        }
+        _current_button = Button::None;
     }
-    // If drag: no click events; the Move events were already emitted during motion.
-    // If long-press already fired: no click on release.
 
     // Remove this finger.
     _fingers.erase(std::remove_if(_fingers.begin(), _fingers.end(),
@@ -113,46 +122,46 @@ std::vector<TouchSynthEvent> TouchInput::handle_finger_up(SDL_FingerID id,
 
     if (was_primary) {
         // If other fingers are still down, promote oldest as new primary,
-        // but do NOT re-arm long-press (avoid surprise).
+        // but do NOT auto-press for them — they came in mid-gesture.
         if (!_fingers.empty()) {
             _primary_id = _fingers.front().id;
         } else {
             _primary_id = -1;
         }
-        _long_press_fired = false;
-        _two_finger_fired = false;
     }
     return out;
 }
 
 std::vector<TouchSynthEvent> TouchInput::tick(uint32_t now_ms) {
     std::vector<TouchSynthEvent> out;
-    if (_primary_id == -1 || _long_press_fired || _two_finger_fired) return out;
+    if (_primary_id == -1) return out;
+    if (_current_button != Button::Left) return out;
 
     auto *p = find(_primary_id);
     if (!p) return out;
-    if (p->dragging || p->consumed) return out;
+    if (p->dragging) return out;
     if (over_slop(*p)) return out;
 
     uint32_t held = now_ms - p->down_time_ms;
     if (held >= (uint32_t)_long_press_ms) {
-        _long_press_fired = true;
-        p->consumed = true;
-        out.push_back({ TouchSynthEvent::Move,         p->start_x, p->start_y });
-        out.push_back({ TouchSynthEvent::RightPress,   p->start_x, p->start_y });
-        out.push_back({ TouchSynthEvent::RightRelease, p->start_x, p->start_y });
+        // Convert in-flight Left to Right (emit Left-up, then Right-down).
+        // Right-up will be emitted on FINGERUP via _current_button = Right.
+        out.push_back({ TouchSynthEvent::LeftRelease, p->start_x, p->start_y });
+        out.push_back({ TouchSynthEvent::RightPress,  p->start_x, p->start_y });
+        _current_button = Button::Right;
     }
     return out;
 }
 
 int TouchInput::next_deadline_ms(uint32_t now_ms) const {
-    if (_primary_id == -1 || _long_press_fired || _two_finger_fired) return -1;
-    // Cannot use find() (const). Scan inline.
+    if (_primary_id == -1) return -1;
+    if (_current_button != Button::Left) return -1;
     for (const auto &f : _fingers) if (f.id == _primary_id) {
-        if (f.dragging || f.consumed) return -1;
+        if (f.dragging) return -1;
         uint32_t deadline = f.down_time_ms + (uint32_t)_long_press_ms;
         if (deadline <= now_ms) return 0;
         return (int)(deadline - now_ms);
     }
     return -1;
 }
+
