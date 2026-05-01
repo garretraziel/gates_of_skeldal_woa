@@ -300,7 +300,10 @@ int SDLContext::init_window(const VideoConfig &config, const char *title, std::f
     std::exception_ptr e;
     std::string_view stage;
     std::string rname;
-    int exit_code = 0;
+    // exit_code must not be a stack local - game thread writes it via detached
+    // thread, and exit() can unwind the stack before event_loop returns.
+    static int exit_code;
+    exit_code = 0;
     try {
         stage = "window";
         SDL_Window *window = SDL_CreateWindow(title,
