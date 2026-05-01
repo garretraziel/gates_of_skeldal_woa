@@ -983,7 +983,7 @@ void show_loading_picture(char *filename)
   ablock_free(p);
   }
 
-typedef int (*GAME_THREAD_CB)(va_list);
+typedef void (*GAME_THREAD_CB)(va_list);
 
 int init_skeldal_thread(va_list args) {
 
@@ -1062,9 +1062,9 @@ int init_skeldal_thread(va_list args) {
     memset(&loadlevel,0,sizeof(loadlevel));
     loadlevel.eflags = 0xFF;
 
-    int r = game_thread(*game_args);
+    game_thread(*game_args);
     va_end(args);
-    return r;
+    return 0;
 
 }
 
