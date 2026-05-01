@@ -10,6 +10,7 @@
 #include <functional>
 #include "unique_value.h"
 #include "pixel_scaler.h"
+#include "touch_input.h"
 
 #include <queue>
 
@@ -39,6 +40,11 @@ public:
         int aspect_x;
         int aspect_y;
         float cursor_size;
+        // Touch / accessibility
+        bool touch_enabled = true;          ///< false = ignore SDL_FINGER events entirely
+        int touch_long_press_ms = 500;
+        int touch_slop_radius_px = 12;
+        bool touch_hide_cursor = true;
     };
 
     struct AudioConfig {
@@ -252,6 +258,13 @@ protected:
     std::unique_ptr<SDL_Texture, SDL_Deleter> _scaled_texture;
     bool _shadow_buffer_ready = false;
 
+    // Touch / input mode tracking
+    enum class InputMode { mouse, touch };
+    TouchInput _touch_input;
+    InputMode _input_mode = InputMode::mouse;
+    bool _touch_enabled = true;
+    bool _touch_hide_cursor = true;
+
 
     bool _fullscreen_mode = false;
     bool _present = false;
@@ -284,6 +297,8 @@ protected:
 
     void event_loop(std::stop_token stp);
     void update_screen(bool force_refresh = false);
+    /// Apply synthesized touch->mouse events to ms_event (and refresh cursor if needed).
+    void apply_touch_events(const std::vector<struct TouchSynthEvent> &evs);
 
 
     template<typename T>

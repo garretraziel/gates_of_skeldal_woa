@@ -6,5 +6,6 @@ add_library(skeldal_sdl
             input.cpp 
             sound.cpp
             sound_filter.cpp
-            pixel_scaler.cpp)
+            pixel_scaler.cpp
+            touch_input.cpp)
 set_property(TARGET skeldal_sdl PROPERTY CXX_STANDARD 20)

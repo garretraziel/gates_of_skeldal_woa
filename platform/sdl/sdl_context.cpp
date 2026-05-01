@@ -274,6 +274,15 @@ int SDLContext::init_window(const VideoConfig &config, const char *title, std::f
     _update_request_event = update_request_event;
     _refresh_request = refresh_request_event;
 
+    // Touch configuration
+    _touch_enabled = config.touch_enabled;
+    _touch_hide_cursor = config.touch_hide_cursor;
+    _touch_input.set_config(config.touch_long_press_ms, config.touch_slop_radius_px);
+    // Disable Windows mouse-event synthesis from touch — we handle SDL_FINGER* ourselves.
+    if (_touch_enabled) {
+        SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "0");
+        SDL_SetHint(SDL_HINT_MOUSE_TOUCH_EVENTS, "0");
+    }
 
     int width = config.window_width;
     int height = config.window_height;
@@ -694,6 +703,36 @@ void SDLContext::generate_j_event(int button, char up) {
 }
 
 
+void SDLContext::apply_touch_events(const std::vector<TouchSynthEvent> &evs) {
+    if (evs.empty()) return;
+    for (const auto &ev : evs) {
+        ms_event.event = 1;
+        ms_event.x = (uint16_t)ev.x;
+        ms_event.y = (uint16_t)ev.y;
+        switch (ev.kind) {
+            case TouchSynthEvent::Move:
+                ms_event.event_type |= 1;       // motion bit (matches mouse move path)
+                break;
+            case TouchSynthEvent::LeftPress:
+                ms_event.tl1 = 1;
+                ms_event.event_type |= (1 << (1 + 0));   // shift=1, up=0 -> bit 1
+                break;
+            case TouchSynthEvent::LeftRelease:
+                ms_event.tl1 = 0;
+                ms_event.event_type |= (1 << (1 + 1));   // shift=1, up=1 -> bit 2
+                break;
+            case TouchSynthEvent::RightPress:
+                ms_event.tl2 = 1;
+                ms_event.event_type |= (1 << (3 + 0));   // shift=3, up=0 -> bit 3
+                break;
+            case TouchSynthEvent::RightRelease:
+                ms_event.tl2 = 0;
+                ms_event.event_type |= (1 << (3 + 1));   // shift=3, up=1 -> bit 4
+                break;
+        }
+    }
+}
+
 void SDLContext::event_loop(std::stop_token stp) {
 
     static Uint32 exit_loop_event = SDL_RegisterEvents(1);
@@ -705,7 +744,24 @@ void SDLContext::event_loop(std::stop_token stp) {
 
 
     SDL_Event e;
-    while (SDL_WaitEvent(&e)) {
+    while (true) {
+        // Use timeout-based wait so deferred touch gestures (e.g. long-press)
+        // can fire even when the user holds a finger still.
+        int wait_ms = -1;
+        if (_touch_enabled) {
+            int dl = _touch_input.next_deadline_ms(SDL_GetTicks());
+            if (dl >= 0) wait_ms = dl;
+        }
+        bool got = (wait_ms < 0) ? (SDL_WaitEvent(&e) != 0)
+                                 : (SDL_WaitEventTimeout(&e, wait_ms) != 0);
+        if (!got) {
+            // Timeout: dispatch any deferred touch events (long-press) and continue.
+            if (_touch_enabled) {
+                auto evs = _touch_input.tick(SDL_GetTicks());
+                if (!evs.empty()) apply_touch_events(evs);
+            }
+            continue;
+        }
         SDL_Scancode kbdevent = {};
         if (e.type == SDL_QUIT) {
             _quit_requested = true;
@@ -785,6 +841,10 @@ void SDLContext::event_loop(std::stop_token stp) {
                 }
             }
         } else if (e.type == SDL_MOUSEMOTION) {
+            // Filter out events synthesized from touch (defensive — we also disable
+            // SDL_HINT_TOUCH_MOUSE_EVENTS, but Windows can still inject some).
+            if (e.motion.which == SDL_TOUCH_MOUSEID) continue;
+            _input_mode = InputMode::mouse;
             SDL_Event temp;
             while (SDL_PeepEvents(&temp, 1, SDL_GETEVENT, SDL_MOUSEMOTION, SDL_MOUSEMOTION)) {
                 e= temp;
@@ -804,6 +864,8 @@ void SDLContext::event_loop(std::stop_token stp) {
 
             }
         } else if (e.type == SDL_MOUSEBUTTONDOWN || e.type == SDL_MOUSEBUTTONUP) {
+            if (e.button.which == SDL_TOUCH_MOUSEID) continue;
+            _input_mode = InputMode::mouse;
             int button = e.button.button;
             int up =  e.type == SDL_MOUSEBUTTONUP?1:0;
             ms_event.event = 1;
@@ -816,8 +878,31 @@ void SDLContext::event_loop(std::stop_token stp) {
             }
             ms_event.event_type |= (1<<(shift+up));
         } else if (e.type == SDL_MOUSEWHEEL) {
+            if (e.wheel.which == SDL_TOUCH_MOUSEID) continue;
+            _input_mode = InputMode::mouse;
             if (e.wheel.y > 0) kbdevent =SDL_SCANCODE_UP;
             else if (e.wheel.y < 0) kbdevent =SDL_SCANCODE_DOWN;
+        } else if (_touch_enabled &&
+                   (e.type == SDL_FINGERDOWN || e.type == SDL_FINGERUP || e.type == SDL_FINGERMOTION)) {
+            _input_mode = InputMode::touch;
+            // Convert normalized 0..1 -> window pixel -> source rect, then clamp.
+            int ww, wh;
+            SDL_GetWindowSize(_window.get(), &ww, &wh);
+            SDL_Point winpt{ (int)(e.tfinger.x * ww), (int)(e.tfinger.y * wh) };
+            SDL_Rect winrc = get_window_aspect_rect();
+            SDL_Point srcpt = to_source_point(winrc, winpt);
+            int sx = std::clamp(srcpt.x, 0, 639);
+            int sy = std::clamp(srcpt.y, 0, 479);
+            uint32_t now = SDL_GetTicks();
+            std::vector<TouchSynthEvent> evs;
+            if (e.type == SDL_FINGERDOWN) {
+                evs = _touch_input.handle_finger_down(e.tfinger.fingerId, sx, sy, now);
+            } else if (e.type == SDL_FINGERUP) {
+                evs = _touch_input.handle_finger_up(e.tfinger.fingerId, sx, sy, now);
+            } else {
+                evs = _touch_input.handle_finger_motion(e.tfinger.fingerId, sx, sy, now);
+            }
+            apply_touch_events(evs);
         } else if (e.type == SDL_JOYBUTTONDOWN) {
             generate_j_event(e.jbutton.button, 0);
         } else if (e.type == SDL_JOYBUTTONUP) {
@@ -932,7 +1017,7 @@ void SDLContext::refresh_screen() {
         SDL_Rect rc = to_window_rect(winrc,sprite._rect);
         SDL_RenderCopy(_renderer.get(), sprite._txtr.get(), NULL, &rc);
     }
-    if (_mouse) {
+    if (_mouse && !(_touch_hide_cursor && _input_mode == InputMode::touch)) {
         SDL_Rect recalc_rect = to_window_rect(winrc, _mouse_rect);
         recalc_rect.w = static_cast<int>(recalc_rect.w * _mouse_size);
         recalc_rect.h = static_cast<int>(recalc_rect.h * _mouse_size);
