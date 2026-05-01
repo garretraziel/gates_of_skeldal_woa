@@ -148,7 +148,10 @@ T_CLK_MAP clk_souboje[]=
   {-1,528,378,630,479,mask_click_help,1,-1},
   {-1,0,0,640,480,mask_click_help_clear,1,-1},
   {MS_GAME_WIN,0,17,639,377,souboje_clk_throw,2,-1},
-  {MS_GAME_WIN,0,17,639,377,clk_fly_cursor,8,-1},
+  // mask 2|8 = left-tap OR right-press. Touch: both tap (= left) and long-press
+  // (= right) on viewport edges turn the party. Mouse: right-click on edges still
+  // turns; left-click only takes effect if no other handler (throw, etc.) consumes it.
+  {MS_GAME_WIN,0,17,639,377,clk_fly_cursor,2|8,-1},
   {-1,54,378,497,479,start_invetory,2+8,-1},
   };
 

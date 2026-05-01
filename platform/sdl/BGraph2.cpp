@@ -256,6 +256,10 @@ char game_display_is_touch_mode() {
     return get_sdl_global_context().is_touch_mode_active() ? 1 : 0;
 }
 
+void game_display_force_show_cursor(int yes) {
+    get_sdl_global_context().set_force_show_cursor(yes != 0);
+}
+
 void game_display_set_icon(const void *icon_data, size_t icon_size) {
     auto &sdl = get_sdl_global_context();
     sdl.set_window_icon(icon_data, icon_size);

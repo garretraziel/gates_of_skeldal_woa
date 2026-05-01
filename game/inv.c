@@ -555,8 +555,10 @@ void pick_set_cursor(void)
   {
   if (picked_item==NULL) {
      item_in_cursor=H_MS_DEFAULT;
+     game_display_force_show_cursor(0);
   } else  {
      item_in_cursor=-(glob_items[*picked_item-1].ikona);
+     game_display_force_show_cursor(1);
   }
   mouse_set_default(item_in_cursor);
   }

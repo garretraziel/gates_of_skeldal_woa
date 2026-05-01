@@ -126,6 +126,8 @@ public:
                                const SDL_Rect &hidden_from, const SDL_Rect &hidden_where);
 
     bool is_touch_mode_active() const { return _input_mode == InputMode::touch; }
+    /// Force-show cursor even in touch mode (e.g., when user is "holding" an item).
+    void set_force_show_cursor(bool v) { _force_show_cursor = v; }
     void set_quit_callback(std::function<void()> fn);
     MS_EVENT getMsEvent()  {
         std::lock_guard _(_mx);
@@ -265,6 +267,7 @@ protected:
     InputMode _input_mode = InputMode::mouse;
     bool _touch_enabled = true;
     bool _touch_hide_cursor = true;
+    bool _force_show_cursor = false;
 
 
     bool _fullscreen_mode = false;

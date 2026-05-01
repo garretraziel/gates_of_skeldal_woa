@@ -1024,7 +1024,7 @@ void SDLContext::refresh_screen() {
         SDL_Rect rc = to_window_rect(winrc,sprite._rect);
         SDL_RenderCopy(_renderer.get(), sprite._txtr.get(), NULL, &rc);
     }
-    if (_mouse && !(_touch_hide_cursor && _input_mode == InputMode::touch)) {
+    if (_mouse && !(_touch_hide_cursor && _input_mode == InputMode::touch && !_force_show_cursor)) {
         SDL_Rect recalc_rect = to_window_rect(winrc, _mouse_rect);
         recalc_rect.w = static_cast<int>(recalc_rect.w * _mouse_size);
         recalc_rect.h = static_cast<int>(recalc_rect.h * _mouse_size);

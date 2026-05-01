@@ -658,6 +658,15 @@ void other_draw()
   anim_sipky(0,-1);
   draw_fx();
   draw_console_window();
+  // Touch mode hint: during the battle programming phase, taps on the left/right
+  // edges of the viewport turn the party. Show subtle "<" and ">" so it's
+  // discoverable without a keyboard.
+  if (battle && cur_mode == MD_INBATTLE && game_display_is_touch_mode()) {
+      set_font(H_FBOLD, RGB555(20, 20, 20));
+      position(8, 188);   outtext("<");
+      int rx = 632 - text_width(">");
+      position(rx, 188);  outtext(">");
+  }
   int32_t scr_linelen2 = GetScreenPitch();
 
   memset(GetScreenAdr()+(SCREEN_OFFLINE-1)*scr_linelen2,0,1280);

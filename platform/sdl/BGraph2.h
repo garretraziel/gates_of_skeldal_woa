@@ -30,6 +30,8 @@ char game_display_is_quit_requested();
 void game_display_cancel_quit_request();
 /// Returns 1 if the user is currently interacting via touchscreen.
 char game_display_is_touch_mode();
+/// Force-show the mouse cursor even in touch mode (e.g., while holding an item).
+void game_display_force_show_cursor(int yes);
 void game_display_set_icon(const void *icon_data, size_t icon_size);
 void game_display_show_mouse(const unsigned short *mouse_image, int finger_x, int finger_y);
 void game_display_hide_mouse();
