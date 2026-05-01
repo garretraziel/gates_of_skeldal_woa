@@ -28,6 +28,8 @@ int game_display_init(const INI_CONFIG_SECTION *display_section,
 void game_display_update_rect(unsigned short x,unsigned short y,unsigned short xs,unsigned short ys);
 char game_display_is_quit_requested();
 void game_display_cancel_quit_request();
+/// Returns 1 if the user is currently interacting via touchscreen.
+char game_display_is_touch_mode();
 void game_display_set_icon(const void *icon_data, size_t icon_size);
 void game_display_show_mouse(const unsigned short *mouse_image, int finger_x, int finger_y);
 void game_display_hide_mouse();

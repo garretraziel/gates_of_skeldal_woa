@@ -499,6 +499,8 @@ const T_CLK_MAP * find_in_click_map_entry(int x, int y,T_CLK_MAP *pt,int pocet,i
 int find_in_click_map(MS_EVENT *ms,T_CLK_MAP *pt,int pocet,int *evtype)
   {
   int mscur=-1;
+  T_CLK_MAP *orig_pt = pt;
+  int orig_pocet = pocet;
   while (pocet--)
      {
      if (ms->x>=pt->xlu && ms->x<=pt->xrb && ms->y>=pt->ylu && ms->y<=pt->yrb)
@@ -514,6 +516,49 @@ int find_in_click_map(MS_EVENT *ms,T_CLK_MAP *pt,int pocet,int *evtype)
         }
      pt++;
      }
+
+  // Touch click-snap: if we're in touch mode AND a press event was not
+  // consumed by any in-rect handler, look for a small target nearby and
+  // synthesize a click there. Press event bits in MS_EVENT.event_type:
+  //   left  press = bit 1 (0x02), right press = bit 3 (0x08),
+  //   middle press = bit 5 (0x20).
+  const int press_bits = 0x02 | 0x08 | 0x20;
+  if ((*evtype & press_bits) && game_display_is_touch_mode()) {
+      const int snap = 12;        // px tolerance
+      T_CLK_MAP *best = NULL;
+      int best_dist_sq = -1;
+      pt = orig_pt;
+      for (int i = 0; i < orig_pocet; ++i, ++pt) {
+          if (pt->proc == NULL) continue;
+          if (!(pt->mask & *evtype & press_bits)) continue;
+          // Skip entries whose ORIGINAL rect contains the click — they
+          // already had a chance in the normal pass and either consumed
+          // the event (we wouldn't be here) or declined it.
+          if (ms->x >= pt->xlu && ms->x <= pt->xrb &&
+              ms->y >= pt->ylu && ms->y <= pt->yrb) continue;
+          // Reject if outside expanded rect.
+          if (ms->x < pt->xlu - snap || ms->x > pt->xrb + snap) continue;
+          if (ms->y < pt->ylu - snap || ms->y > pt->yrb + snap) continue;
+          int cx = (pt->xlu + pt->xrb) / 2;
+          int cy = (pt->ylu + pt->yrb) / 2;
+          int dx = ms->x - cx, dy = ms->y - cy;
+          int d2 = dx*dx + dy*dy;
+          if (best_dist_sq < 0 || d2 < best_dist_sq) {
+              best_dist_sq = d2;
+              best = pt;
+          }
+      }
+      if (best) {
+          // Clamp click into the chosen rectangle so the proc sees in-bounds coords.
+          int sx = ms->x; if (sx < best->xlu) sx = best->xlu; if (sx > best->xrb) sx = best->xrb;
+          int sy = ms->y; if (sy < best->ylu) sy = best->ylu; if (sy > best->yrb) sy = best->yrb;
+          if (best->proc(best->id, sx, sy, sx - best->xlu, sy - best->ylu)) {
+              evtype[0] &= ~best->mask;
+          }
+          if (mscur == -1) mscur = best->cursor;
+      }
+  }
+
   return mscur;
   }
 

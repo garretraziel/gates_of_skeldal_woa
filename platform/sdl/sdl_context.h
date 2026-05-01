@@ -125,6 +125,7 @@ public:
     void show_slide_transition(const SDL_Rect &visible_from, const SDL_Rect &visible_where,
                                const SDL_Rect &hidden_from, const SDL_Rect &hidden_where);
 
+    bool is_touch_mode_active() const { return _input_mode == InputMode::touch; }
     void set_quit_callback(std::function<void()> fn);
     MS_EVENT getMsEvent()  {
         std::lock_guard _(_mx);
