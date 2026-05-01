@@ -11,6 +11,7 @@
 #include "unique_value.h"
 #include "pixel_scaler.h"
 #include "touch_input.h"
+#include "touch_overlay.h"
 
 #include <queue>
 
@@ -264,6 +265,7 @@ protected:
     // Touch / input mode tracking
     enum class InputMode { mouse, touch };
     TouchInput _touch_input;
+    TouchOverlay _touch_overlay;
     InputMode _input_mode = InputMode::mouse;
     bool _touch_enabled = true;
     bool _touch_hide_cursor = true;

@@ -324,6 +324,11 @@ int SDLContext::init_window(const VideoConfig &config, const char *title, std::f
         }
 
         _window.reset(window);
+        {
+            int ww, wh;
+            SDL_GetWindowSize(_window.get(), &ww, &wh);
+            _touch_overlay.layout(ww, wh);
+        }
 
         auto composer = config.composer;
 
@@ -782,6 +787,9 @@ void SDLContext::event_loop(std::stop_token stp) {
         } else if (e.type == SDL_WINDOWEVENT) {
                 if (e.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
                     _crt_effect.reset();
+                    int ww, wh;
+                    SDL_GetWindowSize(_window.get(), &ww, &wh);
+                    _touch_overlay.layout(ww, wh);
                 }
          } else if (e.type == SDL_KEYDOWN || e.type == SDL_KEYUP) {
             _key_capslock = e.key.keysym.mod & KMOD_CAPS;
@@ -896,6 +904,23 @@ void SDLContext::event_loop(std::stop_token stp) {
             int ww, wh;
             SDL_GetWindowSize(_window.get(), &ww, &wh);
             SDL_Point winpt{ (int)(e.tfinger.x * ww), (int)(e.tfinger.y * wh) };
+
+            // Touch overlay (virtual key bar) takes priority.
+            // We trigger on FINGERUP only — gives the user a chance to slide off
+            // the button before committing (matches OS conventions). Down/motion
+            // over the bar are silently absorbed; matching FINGERUP fires the key.
+            SDL_Scancode overlay_hit = _touch_overlay.hit_test(winpt.x, winpt.y);
+            if (overlay_hit != SDL_SCANCODE_UNKNOWN) {
+                if (e.type == SDL_FINGERUP) {
+                    auto code = sdl_keycode_map.get_bios_code(overlay_hit, false, false);
+                    if (code) {
+                        std::lock_guard _(_mx);
+                        _keyboard_queue.push(code);
+                    }
+                }
+                continue;   // never forward to TouchInput / MS_EVENT
+            }
+
             SDL_Rect winrc = get_window_aspect_rect();
             SDL_Point srcpt = to_source_point(winrc, winpt);
             int sx = std::clamp(srcpt.x, 0, 639);
@@ -1040,6 +1065,10 @@ void SDLContext::refresh_screen() {
             _crt_effect.reset(txt);
         }
         SDL_RenderCopy(_renderer.get(), _crt_effect.get(), NULL, &winrc);
+    }
+    // Draw touch helper bar (after CRT so it stays crisp). Touch-mode only.
+    if (_input_mode == InputMode::touch && _touch_enabled) {
+        _touch_overlay.render(_renderer.get());
     }
     SDL_RenderPresent(_renderer.get());
 
